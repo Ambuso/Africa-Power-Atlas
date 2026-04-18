@@ -1,0 +1,1669 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          18.477872,
+          -34.037418
+        ]
+      },
+      "properties": {
+        "Company": "Cassava Technologies",
+        "url": "https://www.cassavatechnologies.com/",
+        "Subsidiary": "Africa DataCentres",
+        "Subsidiary url": "https://www.africadatacentres.com/",
+        "Short Name": "CPT1",
+        "SQM White Space": 2700,
+        "IT Power": 9,
+        "Address": "108 De Waal Rd",
+        "Address2": "Elfindale",
+        "City": "Cape Town",
+        "Country": "South Africa",
+        "PostCode": 7945,
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          18.4649,
+          -33.9712
+        ]
+      },
+      "properties": {
+        "Company": "Digital Realty",
+        "url": "https://www.digitalrealty.com/",
+        "Subsidiary": "Teraco",
+        "Subsidiary url": "https://www.teraco.co.za/",
+        "Short Name": "CT1",
+        "SQM White Space": 2600,
+        "IT Power": 3,
+        "Address": "Great Westerford Building",
+        "Address2": "Rondebosch",
+        "City": "Cape Town",
+        "Country": "South Africa",
+        "PostCode": "",
+        "Tel": "+27 (0) 11 573 2800",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          18.472225,
+          -33.960275
+        ]
+      },
+      "properties": {
+        "Company": "Open Access Data Centres",
+        "url": "https://openaccessdc.net/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "CPT1",
+        "SQM White Space": 700,
+        "IT Power": 2,
+        "Address": "Belmont Office Park, Belmont Road,",
+        "Address2": "Rondebosch",
+        "City": "Cape Town",
+        "Country": "South Africa",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          18.67936,
+          -33.907417
+        ]
+      },
+      "properties": {
+        "Company": "Digital Realty",
+        "url": "https://www.digitalrealty.com/",
+        "Subsidiary": "Teraco",
+        "Subsidiary url": "https://www.teraco.co.za/",
+        "Short Name": "CT2",
+        "SQM White Space": 18000,
+        "IT Power": 50,
+        "Address": "57 Tiber Road, Brackengate 2",
+        "Address2": "Brackenfell",
+        "City": "Cape Town",
+        "Country": "South Africa",
+        "PostCode": "",
+        "Tel": "+27 (0) 11 573 2800",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          18.672694,
+          -33.904774
+        ]
+      },
+      "properties": {
+        "Company": "Open Access Data Centres",
+        "url": "https://openaccessdc.net/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "CPT2",
+        "SQM White Space": 1500,
+        "IT Power": 5,
+        "Address": "Chayyim Park, 10 Viro Street,",
+        "Address2": "Stikland Industrial",
+        "City": "Cape Town",
+        "Country": "South Africa",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          30.909818,
+          -30.020369
+        ]
+      },
+      "properties": {
+        "Company": "Open Access Data Centres",
+        "url": "https://openaccessdc.net/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "DUR1",
+        "SQM White Space": 2000,
+        "IT Power": 4,
+        "Address": "Oppenheimer Rd",
+        "Address2": "Amanzimtoti",
+        "City": "Durban",
+        "Country": "South Africa",
+        "PostCode": 4000,
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          30.99261,
+          -29.7793
+        ]
+      },
+      "properties": {
+        "Company": "Digital Realty",
+        "url": "https://www.digitalrealty.com/",
+        "Subsidiary": "Teraco",
+        "Subsidiary url": "https://www.teraco.co.za/",
+        "Short Name": "DB1",
+        "SQM White Space": 1500,
+        "IT Power": 2,
+        "Address": "Riverhorse Close, Riverhorse Valley",
+        "Address2": "Newlands",
+        "City": "Durban",
+        "Country": "South Africa",
+        "PostCode": "",
+        "Tel": "+27 (0) 11 573 2800",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          28.197903,
+          -26.155481
+        ]
+      },
+      "properties": {
+        "Company": "Vantage Data Centers",
+        "url": "https://vantage-dc.com",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "JNB2",
+        "SQM White Space": "",
+        "IT Power": 20,
+        "Address": "Brollo Road",
+        "Address2": "",
+        "City": "Midrand",
+        "Country": "South Africa",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          28.197902,
+          -26.155218
+        ]
+      },
+      "properties": {
+        "Company": "Equinix",
+        "url": "https://equinix.com",
+        "Subsidiary": "MainOne",
+        "Subsidiary url": "",
+        "Short Name": "JN1",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "308 Brollo Road, Tunney",
+        "Address2": "Germiston",
+        "City": "Johannesburg",
+        "Country": "South Africa",
+        "PostCode": 1614,
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          28.19802,
+          -26.138
+        ]
+      },
+      "properties": {
+        "Company": "Digital Realty",
+        "url": "https://www.digitalrealty.com/",
+        "Subsidiary": "Teraco",
+        "Subsidiary url": "https://www.teraco.co.za/",
+        "Short Name": "JB1 East & West",
+        "SQM White Space": 20000,
+        "IT Power": "",
+        "Address": "5 Brewery Street",
+        "Address2": "Isando",
+        "City": "Johannesburg",
+        "Country": "South Africa",
+        "PostCode": "",
+        "Tel": "+27 (0) 11 573 2800",
+        "Exchange Host": "NAPAfrica IX"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          28.199605,
+          -26.136132
+        ]
+      },
+      "properties": {
+        "Company": "Digital Realty",
+        "url": "https://www.digitalrealty.com/",
+        "Subsidiary": "Teraco",
+        "Subsidiary url": "https://www.teraco.co.za/",
+        "Short Name": "JB3",
+        "SQM White Space": 12000,
+        "IT Power": "",
+        "Address": "14 Kiln Road",
+        "Address2": "Isando",
+        "City": "Johannesburg",
+        "Country": "South Africa",
+        "PostCode": "",
+        "Tel": "+27 (0) 11 573 2800",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          28.200026,
+          -26.135295
+        ]
+      },
+      "properties": {
+        "Company": "Open Access Data Centres",
+        "url": "https://openaccessdc.net/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "JNB1",
+        "SQM White Space": 3000,
+        "IT Power": 12,
+        "Address": "OADC Isando JNB1, 22 Electron Avenue,",
+        "Address2": "Isando, Kempton Park",
+        "City": "Johannesburg",
+        "Country": "South Africa",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          28.278336,
+          -26.075195
+        ]
+      },
+      "properties": {
+        "Company": "Digital Realty",
+        "url": "https://www.digitalrealty.com/",
+        "Subsidiary": "Teraco",
+        "Subsidiary url": "https://www.teraco.co.za/",
+        "Short Name": "JB2",
+        "SQM White Space": 5400,
+        "IT Power": 13,
+        "Address": "0A, 1st Road",
+        "Address2": "Glen Marais",
+        "City": "Kempton Park",
+        "Country": "South Africa",
+        "PostCode": "",
+        "Tel": "+27 (0) 11 573 2800",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          28.269732,
+          -26.025018
+        ]
+      },
+      "properties": {
+        "Company": "Digital Realty",
+        "url": "https://www.digitalrealty.com/",
+        "Subsidiary": "Teraco",
+        "Subsidiary url": "https://www.teraco.co.za/",
+        "Short Name": "JB4",
+        "SQM White Space": 20000,
+        "IT Power": "",
+        "Address": "Birkenhead Street",
+        "Address2": "Glen Marais",
+        "City": "Kempton Park",
+        "Country": "South Africa",
+        "PostCode": "",
+        "Tel": "+27 (0) 11 573 2800",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          28.117645,
+          -26.018576
+        ]
+      },
+      "properties": {
+        "Company": "Vantage Data Centers",
+        "url": "https://vantage-dc.com",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "JNB1",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "Waterfall Logistics Precinct",
+        "Address2": "1 Howick Cl",
+        "City": "Midrand",
+        "Country": "South Africa",
+        "PostCode": 1685,
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          28.119923,
+          -26.011123
+        ]
+      },
+      "properties": {
+        "Company": "Cassava Technologies",
+        "url": "https://www.cassavatechnologies.com/",
+        "Subsidiary": "Africa DataCentres",
+        "Subsidiary url": "https://www.africadatacentres.com/",
+        "Short Name": "JHB1",
+        "SQM White Space": 9000,
+        "IT Power": 14.5,
+        "Address": "401 Old Pretoria Rd",
+        "Address2": "Midrand",
+        "City": "Johannesburg",
+        "Country": "South Africa",
+        "PostCode": 1685,
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          32.58536,
+          -25.95842
+        ]
+      },
+      "properties": {
+        "Company": "Digital Realty",
+        "url": "https://www.digitalrealty.com/",
+        "Subsidiary": "icolo",
+        "Subsidiary url": "https://www.icolo.io/",
+        "Short Name": "MPM1",
+        "SQM White Space": 350,
+        "IT Power": "",
+        "Address": "140D, Avenida Vladimir Lenine Center",
+        "Address2": "",
+        "City": "Maputo",
+        "Country": "Mozambique",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          28.138421,
+          -25.930529
+        ]
+      },
+      "properties": {
+        "Company": "Cassava Technologies",
+        "url": "https://www.cassavatechnologies.com/",
+        "Subsidiary": "Africa DataCentres",
+        "Subsidiary url": "https://www.africadatacentres.com/",
+        "Short Name": "JHB2",
+        "SQM White Space": 14400,
+        "IT Power": 35,
+        "Address": "17 Waterloo Road, Samrand Business Park",
+        "Address2": "Centurion",
+        "City": "Johannesburg",
+        "Country": "South Africa",
+        "PostCode": 187,
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          32.415477,
+          -25.91981
+        ]
+      },
+      "properties": {
+        "Company": "Raxio",
+        "url": "https://www.raxiogroup.com/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "MZ1",
+        "SQM White Space": 2000,
+        "IT Power": "",
+        "Address": "Av. Kim II Sung, No. 1219",
+        "Address2": "",
+        "City": "Maputo ",
+        "Country": "Mozambique",
+        "PostCode": "",
+        "Tel": "+256 323 010 100",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          17.068076,
+          -22.414539
+        ]
+      },
+      "properties": {
+        "Company": "Paratus",
+        "url": "https://paratus.africa",
+        "Subsidiary": "",
+        "Subsidiary url": "https://armada.paratus.africa/",
+        "Short Name": "Namibia",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "B1 Highway",
+        "Address2": "",
+        "City": "Windhoek",
+        "Country": "Namibia",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          28.311824,
+          -15.423194
+        ]
+      },
+      "properties": {
+        "Company": "Infratel",
+        "url": "https://infratel.co.zm",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "Lusaka",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "Corner of United Nations Road &, Independence Ave",
+        "Address2": "",
+        "City": "Lusaka",
+        "Country": "Zambia",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          28.293392,
+          -15.407675
+        ]
+      },
+      "properties": {
+        "Company": "Paratus",
+        "url": "https://paratus.africa",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "Lusaka",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "34 Bwinjimfumu Rd",
+        "Address2": "",
+        "City": "Lusaka",
+        "Country": "Zambia",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.181191,
+          -8.949799
+        ]
+      },
+      "properties": {
+        "Company": "Paratus",
+        "url": "https://paratus.africa",
+        "Subsidiary": "Paratus Angola",
+        "Subsidiary url": "https://www.paratus.ao/",
+        "Short Name": "Luanda",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "29th Street, Epal 30",
+        "Address2": "Patriota",
+        "City": "Luanda",
+        "Country": "Angola",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.394555,
+          -8.765674
+        ]
+      },
+      "properties": {
+        "Company": "Raxio",
+        "url": "https://www.raxiogroup.com/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "AO1",
+        "SQM White Space": 2000,
+        "IT Power": "",
+        "Address": "Rua Jos\u00e9 da Silva Lameira",
+        "Address2": "Edif\u00edcio Kaluanda, Piso 2, Escrit\u00f3rio 2001",
+        "City": "Luanda",
+        "Country": "Angola",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          39.201856,
+          -6.71604
+        ]
+      },
+      "properties": {
+        "Company": "Wingu Africa",
+        "url": "https://wingu.africa",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "Dar",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "Plot No. 57, Mbezi Industrial Area",
+        "Address2": "Kinondoni Municipality",
+        "City": "Dar Es Salaam",
+        "Country": "Tanzania",
+        "PostCode": "",
+        "Tel": "+255 613 521514",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          15.343314,
+          -4.356551
+        ]
+      },
+      "properties": {
+        "Company": "Raxio",
+        "url": "https://www.raxiogroup.com/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "DRC1",
+        "SQM White Space": 1056,
+        "IT Power": "",
+        "Address": "9/11 12 i\u00e8me Rue",
+        "Address2": "Limete industriel",
+        "City": "Kinshasa",
+        "Country": "Democratic Republic of Congo",
+        "PostCode": "",
+        "Tel": "+243 808 382 554",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          15.273856,
+          -4.322337
+        ]
+      },
+      "properties": {
+        "Company": "Open Access Data Centres",
+        "url": "https://openaccessdc.net/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "FIH1",
+        "SQM White Space": 2700,
+        "IT Power": 2,
+        "Address": "Silikin Village, Concession COTEX,",
+        "Address2": "63 Avenue Colonel Mondjiba, Gombe",
+        "City": "Kinshasa",
+        "Country": "Democratic Republic of Congo",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          39.70012,
+          -4.04207
+        ]
+      },
+      "properties": {
+        "Company": "Digital Realty",
+        "url": "https://www.digitalrealty.com/",
+        "Subsidiary": "icolo",
+        "Subsidiary url": "https://www.icolo.io/",
+        "Short Name": "MBA2",
+        "SQM White Space": 1200,
+        "IT Power": "",
+        "Address": "Kongoni Road off Beach Road ",
+        "Address2": "Nyali",
+        "City": "Mombasa",
+        "Country": "Kenya",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          39.59069,
+          -4.008083
+        ]
+      },
+      "properties": {
+        "Company": "Digital Realty",
+        "url": "https://www.digitalrealty.com/",
+        "Subsidiary": "icolo",
+        "Subsidiary url": "https://www.icolo.io/",
+        "Short Name": "MBA1",
+        "SQM White Space": 580,
+        "IT Power": "",
+        "Address": "Mombasa-Nairobi Highway,\nopposite New Jomvu Total",
+        "Address2": "Miritini",
+        "City": "Mombasa",
+        "Country": "Kenya",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": "3 IXPs"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          30.15,
+          -1.93
+        ]
+      },
+      "properties": {
+        "Company": "PAIX",
+        "url": "https://paix.io/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "KGL-1",
+        "SQM White Space": 1300,
+        "IT Power": 3,
+        "Address": "",
+        "Address2": "",
+        "City": "KIgali",
+        "Country": "Rwanda",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          36.74916,
+          -1.34986
+        ]
+      },
+      "properties": {
+        "Company": "Digital Realty",
+        "url": "https://www.digitalrealty.com/",
+        "Subsidiary": "icolo",
+        "Subsidiary url": "https://www.icolo.io/",
+        "Short Name": "NBO1",
+        "SQM White Space": 624,
+        "IT Power": "",
+        "Address": "LRC Road, off Langata South Road",
+        "Address2": "Karen",
+        "City": "Nairobi",
+        "Country": "Kenya",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": "4 IXPs"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          36.886032,
+          -1.329315
+        ]
+      },
+      "properties": {
+        "Company": "iXAfrica Datacentre",
+        "url": "https://ixafrica.co.ke/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "NBOX1",
+        "SQM White Space": "",
+        "IT Power": 2.25,
+        "Address": "Mombasa Road",
+        "Address2": "",
+        "City": "Nairobi",
+        "Country": "Kenya",
+        "PostCode": "",
+        "Tel": "+254 793 973 584",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          36.866984,
+          -1.327908
+        ]
+      },
+      "properties": {
+        "Company": "Cassava Technologies",
+        "url": "https://www.cassavatechnologies.com/",
+        "Subsidiary": "Africa DataCentres",
+        "Subsidiary url": "https://www.africadatacentres.com/",
+        "Short Name": "NBO1",
+        "SQM White Space": 500,
+        "IT Power": 2.7,
+        "Address": "Sameer Business Park, Block A",
+        "Address2": "Mombasa Road",
+        "City": "Nairobi",
+        "Country": "Kenya",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          36.812938,
+          -1.299913
+        ]
+      },
+      "properties": {
+        "Company": "PAIX",
+        "url": "https://paix.io/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "NBO-1",
+        "SQM White Space": 700,
+        "IT Power": 0.7,
+        "Address": "Britam Tower, Hospital Road",
+        "Address2": "Upper Hill",
+        "City": "Nairobi",
+        "Country": "Kenya",
+        "PostCode": "",
+        "Tel": "+254 110 097 920",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          32.689729,
+          0.347225
+        ]
+      },
+      "properties": {
+        "Company": "Raxio",
+        "url": "https://www.raxiogroup.com/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "UG1",
+        "SQM White Space": 1000,
+        "IT Power": "",
+        "Address": "Plot 781, Block 113",
+        "Address2": "Bweyogere Industral Area Rd",
+        "City": "Kampala",
+        "Country": "Uganda",
+        "PostCode": "",
+        "Tel": "+256 323 010 100",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.755003,
+          5.210412
+        ]
+      },
+      "properties": {
+        "Company": "Equinix",
+        "url": "https://equinix.com",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "AB1",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "Zone Franche Grand-Bassam, VITIB",
+        "Address2": ", Ilot 6, Lot 46.",
+        "City": "Grand Bassam",
+        "Country": "C\u00f4te d'Ivoire",
+        "PostCode": 74671,
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.75911,
+          5.227681
+        ]
+      },
+      "properties": {
+        "Company": "Raxio",
+        "url": "https://www.raxiogroup.com/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "CIV1",
+        "SQM White Space": 2000,
+        "IT Power": "",
+        "Address": "Parc Technologique Mahatma Gandhi",
+        "Address2": "Immeuble Bonoua, Zone franche Vitib",
+        "City": "Grand Bassam",
+        "Country": "C\u00f4te d'Ivoire",
+        "PostCode": "BP 605",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.96,
+          5.36
+        ]
+      },
+      "properties": {
+        "Company": "PAIX",
+        "url": "https://paix.io/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "ABJ-1",
+        "SQM White Space": 900,
+        "IT Power": 2,
+        "Address": "Bonoumin",
+        "Address2": "Cocody",
+        "City": "Abidjan",
+        "Country": "C\u00f4te d'Ivoire",
+        "PostCode": "",
+        "Tel": "\n+254 110 097 920",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.206055,
+          5.542322
+        ]
+      },
+      "properties": {
+        "Company": "Digital Realty",
+        "url": "https://www.digitalrealty.com/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "ACR2",
+        "SQM White Space": 1100,
+        "IT Power": "",
+        "Address": "Bank Street and Prof. Atta Mills High St",
+        "Address2": "",
+        "City": "Accra",
+        "Country": "Ghana",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.209632,
+          5.571487
+        ]
+      },
+      "properties": {
+        "Company": "PAIX",
+        "url": "https://paix.io/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "ACC-1",
+        "SQM White Space": 678,
+        "IT Power": 1.2,
+        "Address": "42 Ring Road Central",
+        "Address2": "",
+        "City": "Accra",
+        "Country": "Ghana",
+        "PostCode": "",
+        "Tel": "+233 27 888 8807",
+        "Exchange Host": "GAXA, Accra-IX"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.110309,
+          5.766489
+        ]
+      },
+      "properties": {
+        "Company": "Onix",
+        "url": "https://onixdatacentres.com/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "Accra",
+        "SQM White Space": 1950,
+        "IT Power": "",
+        "Address": "Onix Drive",
+        "Address2": "",
+        "City": "Accra",
+        "Country": "Ghana",
+        "PostCode": 233,
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.094354,
+          5.802721
+        ]
+      },
+      "properties": {
+        "Company": "Equinix",
+        "url": "https://equinix.com",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "AC1",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "Plot No 1, Benin Boulevard, Appolonia Industrial Park,",
+        "Address2": "Appolonia City",
+        "City": "Accra",
+        "Country": "Ghana",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.407477,
+          6.41466
+        ]
+      },
+      "properties": {
+        "Company": "Cassava Technologies",
+        "url": "https://www.cassavatechnologies.com/",
+        "Subsidiary": "Africa DataCentres",
+        "Subsidiary url": "https://www.africadatacentres.com/",
+        "Short Name": "LOS1",
+        "SQM White Space": 9800,
+        "IT Power": 20.65,
+        "Address": "Eko Atlantic",
+        "Address2": "",
+        "City": "Lagos",
+        "Country": "Nigeria",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.497681,
+          6.424661
+        ]
+      },
+      "properties": {
+        "Company": "Open Access Data Centres",
+        "url": "https://openaccessdc.net/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "LOS1",
+        "SQM White Space": 7200,
+        "IT Power": 24,
+        "Address": "3rd Elegushi Beach Gate, By Silverbird Road,",
+        "Address2": "Off Yemi Adetayo Street, Lekki",
+        "City": "Lagos",
+        "Country": "Nigeria",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.417525,
+          6.426714
+        ]
+      },
+      "properties": {
+        "Company": "Digital Realty",
+        "url": "https://www.digitalrealty.com/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "LOS1",
+        "SQM White Space": 317,
+        "IT Power": "",
+        "Address": "8A Saka Tinubu Street",
+        "Address2": "Victoria Island",
+        "City": "Lagos",
+        "Country": "Nigeria",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.417942,
+          6.426911
+        ]
+      },
+      "properties": {
+        "Company": "Digital Realty",
+        "url": "https://www.digitalrealty.com/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "LOS2",
+        "SQM White Space": 680,
+        "IT Power": "",
+        "Address": "8B Saka Tinubu Street",
+        "Address2": "Victoria Island",
+        "City": "Lagos",
+        "Country": "Nigeria",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.58,
+          6.44
+        ]
+      },
+      "properties": {
+        "Company": "Equinix",
+        "url": "https://equinix.com",
+        "Subsidiary": "MainOne",
+        "Subsidiary url": "",
+        "Short Name": "LG2",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "Chief Chuks Ikokwu Street",
+        "Address2": "Lekki",
+        "City": "Lagos",
+        "Country": "Nigeria",
+        "PostCode": 10605,
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.588295,
+          6.449562
+        ]
+      },
+      "properties": {
+        "Company": "Equinix",
+        "url": "https://equinix.com",
+        "Subsidiary": "MainOne",
+        "Subsidiary url": "",
+        "Short Name": "LG1",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "Chief Chuks Ikokwu Street",
+        "Address2": "Lekki",
+        "City": "Lagos",
+        "Country": "Nigeria",
+        "PostCode": 10604,
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.373079,
+          6.597574
+        ]
+      },
+      "properties": {
+        "Company": "Rack Centre",
+        "url": "https://www.rack-centre.com",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "LGS1",
+        "SQM White Space": 1200,
+        "IT Power": 1.5,
+        "Address": "Plot 18 Jagal Close",
+        "Address2": "Oregun, Ikeja",
+        "City": "Lagos",
+        "Country": "Nigeria",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.373553,
+          6.597779
+        ]
+      },
+      "properties": {
+        "Company": "Rack Centre",
+        "url": "https://www.rack-centre.com",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "LGS2",
+        "SQM White Space": 3240,
+        "IT Power": 12,
+        "Address": "Plot 18 Jagal Close",
+        "Address2": "Oregun, Ikeja",
+        "City": "Lagos",
+        "Country": "Nigeria",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.839204,
+          8.960831
+        ]
+      },
+      "properties": {
+        "Company": "Raxio",
+        "url": "https://www.raxiogroup.com/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "ET1",
+        "SQM White Space": 2000,
+        "IT Power": "",
+        "Address": "ICT Park",
+        "Address2": "",
+        "City": "Addis Ababa",
+        "Country": "Ethiopia",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.839912,
+          8.961191
+        ]
+      },
+      "properties": {
+        "Company": "Wingu Africa",
+        "url": "https://wingu.africa",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "Addis",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "Ethio ICT Park",
+        "Address2": "LemiKura Sub City",
+        "City": "Addis Ababa",
+        "Country": "Ethiopia",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.476667,
+          9.072814
+        ]
+      },
+      "properties": {
+        "Company": "Digital Realty",
+        "url": "https://www.digitalrealty.com/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "ABV1",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "23 Kolda St, Off Adetokunbo, ",
+        "Address2": "Ademola, Wuse II",
+        "City": "Abuja",
+        "Country": "Nigeria",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          45.014077,
+          10.434817
+        ]
+      },
+      "properties": {
+        "Company": "Wingu Africa",
+        "url": "https://wingu.africa",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "Berbera",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "Batalaale Beach, Zone 20",
+        "Address2": "Beach Road",
+        "City": "Berbera City",
+        "Country": "Somaliland",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          43.16,
+          11.57
+        ]
+      },
+      "properties": {
+        "Company": "PAIX",
+        "url": "https://paix.io/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "JIB-1",
+        "SQM White Space": 2000,
+        "IT Power": 5,
+        "Address": "",
+        "Address2": "",
+        "City": "Djibouti City",
+        "Country": "Djibouti",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          43.16,
+          11.572
+        ]
+      },
+      "properties": {
+        "Company": "Wingu Africa",
+        "url": "https://wingu.africa",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "Djibouti2",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "Route de la siesta",
+        "Address2": "Zone Industriel Sud",
+        "City": "Djibouti City",
+        "Country": "Djibouti",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          43.160996,
+          11.57301
+        ]
+      },
+      "properties": {
+        "Company": "Wingu Africa",
+        "url": "https://wingu.africa",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "Djibouti1",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "Djibouti Datacenter SARL",
+        "Address2": "Haramous",
+        "City": "Djibouti City",
+        "Country": "Djibouti",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": "DJIX"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          43.161034,
+          11.573201
+        ]
+      },
+      "properties": {
+        "Company": "Djibouti Data Center",
+        "url": "https://www.djiboutidatacenter.com/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "DDC",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "Haramous",
+        "Address2": "",
+        "City": "Djibouti City",
+        "Country": "Djibouti",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": "DJIX"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -17.473859,
+          14.706553
+        ]
+      },
+      "properties": {
+        "Company": "N+One Datacentres",
+        "url": "https://www.nplusone.ma/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "Dakar",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "Immeuble la Pointe",
+        "Address2": "Mermoz Pyrotechnie",
+        "City": "Dakar",
+        "Country": "Senegal",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -17.46,
+          14.71
+        ]
+      },
+      "properties": {
+        "Company": "Onix",
+        "url": "https://onixdatacentres.com/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "Senegal",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "12000 Almadies",
+        "Address2": "(within 2Africa CLS)",
+        "City": "Dakar",
+        "Country": "Senegal",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -17.49,
+          14.72
+        ]
+      },
+      "properties": {
+        "Company": "PAIX",
+        "url": "https://paix.io/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "DKR-1",
+        "SQM White Space": 918,
+        "IT Power": 1.2,
+        "Address": "Lots 48 & 49, Mamelles Fougerolles",
+        "Address2": "Route du phare des mamelles, Ouakam",
+        "City": "Dakar",
+        "Country": "Senegal",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          31.429091,
+          30.018325
+        ]
+      },
+      "properties": {
+        "Company": "GPX Global",
+        "url": "https://gpxglobal.net/internet-data-centers/cairo-1/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "Cairo1",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "New Cairo",
+        "Address2": "",
+        "City": "Cairo",
+        "Country": "Egypt",
+        "PostCode": 4730115,
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          31.428861,
+          30.018344
+        ]
+      },
+      "properties": {
+        "Company": "GPX Global",
+        "url": "https://gpxglobal.net/internet-data-centers/cairo-1/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "Cairo2",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "New Cairo",
+        "Address2": "",
+        "City": "Cairo",
+        "Country": "Egypt",
+        "PostCode": 4730115,
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -7.561825,
+          33.367354
+        ]
+      },
+      "properties": {
+        "Company": "N+One Datacentres",
+        "url": "https://www.nplusone.ma/",
+        "Subsidiary": "",
+        "Subsidiary url": "",
+        "Short Name": "Casablanca",
+        "SQM White Space": "",
+        "IT Power": "",
+        "Address": "Nouaceur",
+        "Address2": "",
+        "City": "Casablanca",
+        "Country": "Morocco",
+        "PostCode": "",
+        "Tel": "",
+        "Exchange Host": ""
+      }
+    }
+  ]
+}
