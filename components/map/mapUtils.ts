@@ -1,49 +1,23 @@
-import type { FeatureCollection, FuelStat, MapDataBundle } from '@/lib/types';
-import { fuelColors } from './fuelColors';
+// src/lib/mapUtils.ts
+import type { FeatureCollection, MapDataBundle, PlantBundle } from '@/lib/types';
 
-export const RENEWABLE_FUELS = new Set([
-  'Solar',
-  'Wind',
-  'Hydro',
-  'Geothermal',
-  'Biomass',
-  'Pumped Storage',
-  'Storage',
-] as const);
-
-const VOLTAGE_COLORS: Record<string, string> = {
-  '735kV+': '#ef4444',
-  '500-734kV': '#f97316',
-  '345-499kV': '#fbbf24',
-  '230-344kV': '#38bdf8',
-  '100-229kV': '#22c55e',
-  '31-99kV': '#a78bfa',
-  '<31kV': '#64748b',
-  Unknown: '#64748b',
-};
-
-const EMPTY_FC: FeatureCollection = {
-  type: 'FeatureCollection',
-  features: [],
-};
-
-function toNumber(v: unknown, fallback = 0): number {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
-}
+export const RENEWABLE_FUELS = new Set(['Solar','Wind','Hydro','Geothermal','Biomass','Pumped Storage','Storage'] as const);
 
 function titleCase(s: string): string {
+  if (!s || typeof s !== 'string') return '';
+  
   return s
     .toLowerCase()
+    .trim()
     .split(/\s+/)
     .filter(Boolean)
-    .map((p) => (p.length > 0 ? p.charAt(0).toUpperCase() + p.slice(1) : ''))
+    .map((p) => (p[0]?.toUpperCase() ?? '') + p.slice(1))
     .join(' ');
 }
 
 export function normalizeFuel(raw: unknown): string {
   const value = String(raw ?? '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-
+  
   if (value.includes('offshorewind') || value.includes('wind')) return 'Wind';
   if (value.includes('solar')) return 'Solar';
   if (value.includes('pumped')) return 'Pumped Storage';
@@ -55,7 +29,7 @@ export function normalizeFuel(raw: unknown): string {
   if (value.includes('coal') || value.includes('lignite')) return 'Coal';
   if (value.includes('oil') || value.includes('diesel')) return 'Oil';
   if (value.includes('nuclear')) return 'Nuclear';
-
+  
   return titleCase(String(raw ?? 'Other'));
 }
 
@@ -75,50 +49,53 @@ export function classifyVoltage(raw: unknown): string {
   return '<31kV';
 }
 
-export function preparePowerPlants(data: any) {
-  return {
-    plants: EMPTY_FC,
-    totalPlants: 0,
-    totalGW: '0',
-    techStats: [] as FuelStat[],
-    countryStats: [],
-  };
+// Placeholder prepare functions
+export function preparePowerPlants(data: any): any {
+  return { type: 'FeatureCollection', features: [] };
 }
 
 export function prepareTransmission(data: any): FeatureCollection {
-  return EMPTY_FC;
+  return { type: 'FeatureCollection', features: [] };
 }
 
 export function prepareDataCenters(data: any): FeatureCollection {
-  return EMPTY_FC;
+  return { type: 'FeatureCollection', features: [] };
 }
 
 export function prepareSubstations(data: any): FeatureCollection {
-  return EMPTY_FC;
+  return { type: 'FeatureCollection', features: [] };
 }
 
 export function preparePlannedUpgrades(data: any): FeatureCollection {
-  return EMPTY_FC;
+  return { type: 'FeatureCollection', features: [] };
 }
 
+// Final empty data that satisfies ALL types
 export async function loadAndPreparePowerGridData(): Promise<MapDataBundle> {
+  const emptyFC: FeatureCollection = { 
+    type: 'FeatureCollection', 
+    features: [] 
+  };
+
+  const emptyPlantBundle: PlantBundle = {
+    plants: emptyFC,
+    totalPlants: 0,
+    totalGW: "0",
+    techStats: [],
+    countryStats: [],
+  };
+
   return {
-    plants: {
-      plants: EMPTY_FC,
-      totalPlants: 0,
-      totalGW: '0',
-      techStats: [] as FuelStat[],
-      countryStats: [],
-    },
-    transmission: EMPTY_FC,
-    substations: EMPTY_FC,
-    dataCenters: EMPTY_FC,
-    waterStress: EMPTY_FC,
-    submarineCables: EMPTY_FC,
-    plannedUpgrades: EMPTY_FC,
-    admin0: EMPTY_FC,
-    admin1: EMPTY_FC,
-    admin2: EMPTY_FC,
-    placeLabels: EMPTY_FC,
+    plants: emptyPlantBundle,
+    transmission: emptyFC,        // ← changed from null
+    substations: emptyFC,         // ← changed from null
+    dataCenters: emptyFC,         // ← changed from null
+    waterStress: emptyFC,         // ← changed from null
+    submarineCables: emptyFC,     // ← changed from null
+    plannedUpgrades: emptyFC,     // ← changed from null
+    admin0: emptyFC,
+    admin1: emptyFC,
+    admin2: emptyFC,
+    placeLabels: emptyFC,
   };
 }

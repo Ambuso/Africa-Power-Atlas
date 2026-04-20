@@ -1,18 +1,78 @@
-/* ==================== lib/types.ts ==================== */
-import type { FeatureCollection as GeoJSONFeatureCollection, Point } from 'geojson';
+/* ==================== lib/types.ts ====================
+ * Central type contracts for the Africa Power Atlas.
+ * No logic — just the shape of data flowing between prep and render.
+ * ==================================================== */
 
-export type FeatureCollection = GeoJSONFeatureCollection;
-export type PlantFeatureCollection = GeoJSONFeatureCollection<Point>;
+import type { Feature, FeatureCollection as GeoJSONFC, Geometry } from 'geojson';
 
-export type MapThemeKey =
-  | 'dark'
-  | 'light'
-  | 'streets'
-  | 'hybrid'
-  | 'satellite'
-  | 'minimal';
+/* Geo primitives */
+export type AnyFeature = Feature<Geometry, Record<string, unknown>>;
+export type FeatureCollection = GeoJSONFC<Geometry, Record<string, unknown>>;
+export type PlantFeatureCollection = GeoJSONFC<Geometry, PlantProperties>;
 
-export type LayerVisibility = {
+/* Power plants */
+export interface PlantProperties {
+  name?: string;
+  fuel?: string;
+  capacity_mw?: number;
+  country?: string;
+  iso3?: string;
+  country_long?: string;
+  country_code?: string;
+  renewable?: boolean;
+  color?: string;
+  intensity?: number;
+  owner?: string;
+  operator?: string;
+  commissioning_year?: number;
+  status?: 'operating' | 'construction' | 'planned' | 'retired' | string;
+  [key: string]: unknown;
+}
+
+/* Aggregates */
+export interface FuelStat {
+  fuel: string;
+  count: number;
+  mw: number;
+  color: string;
+  gw?: number;
+  percentage?: number;
+}
+
+export interface CountryStat {
+  country: string;
+  iso3?: string;
+  mw: number;
+  gw: number;
+  plantCount: number;
+  renewableShare: number;
+}
+
+/* Bundle shapes */
+export interface PlantBundle {
+  plants: PlantFeatureCollection;
+  totalPlants: number;
+  totalGW: string;
+  techStats: FuelStat[];
+  countryStats: CountryStat[];
+}
+
+export interface MapDataBundle {
+  plants: PlantBundle;
+  transmission: FeatureCollection;
+  substations: FeatureCollection;
+  dataCenters: FeatureCollection;
+  submarineCables: FeatureCollection | null;
+  waterStress: FeatureCollection | null;
+  plannedUpgrades: FeatureCollection;
+  admin0: FeatureCollection | null;
+  admin1: FeatureCollection | null;
+  admin2: FeatureCollection | null;
+  placeLabels: FeatureCollection | null;
+}
+
+/* UI state */
+export interface LayerVisibility {
   plants: boolean;
   dataCenters: boolean;
   transmission: boolean;
@@ -20,48 +80,11 @@ export type LayerVisibility = {
   submarineCables: boolean;
   plannedUpgrades: boolean;
   waterStress: boolean;
-  /** Administrative boundaries (optional — default true in most themes) */
-  admin0?: boolean;
-  admin1?: boolean;
-  admin2?: boolean;
-  /** Country/city place labels rendered from our own Natural Earth data */
-  placeLabels?: boolean;
-};
+  admin0: boolean;
+  admin1: boolean;
+  admin2: boolean;
+  placeLabels: boolean;
+}
 
-export type FuelStat = {
-  fuel: string;
-  count: number;
-  mw: number;
-  color: string;
-  gw?: number;
-  percentage?: number;
-};
-
-export type CountryStat = {
-  country: string;
-  gw: number;
-  mw: number;
-};
-
-export type PlantsBundle = {
-  plants: FeatureCollection;
-  totalPlants: number;
-  totalGW: string;
-  techStats: FuelStat[];
-  countryStats: CountryStat[];
-};
-
-export type MapDataBundle = {
-  plants: PlantsBundle;
-  transmission: FeatureCollection;
-  substations: FeatureCollection;
-  dataCenters: FeatureCollection;
-  waterStress: FeatureCollection | null;
-  submarineCables: FeatureCollection | null;
-  plannedUpgrades: FeatureCollection;
-  admin0?: FeatureCollection | null;
-  admin1?: FeatureCollection | null;
-  admin2?: FeatureCollection | null;
-  /** Optional: country/city points for high-quality label rendering */
-  placeLabels?: FeatureCollection | null;
-};
+export type MapThemeKey = 'dark' | 'light' | 'streets' | 'hybrid' | 'satellite' | 'minimal';
+export type ViewMode = 'points' | 'cluster' | 'heatmap';

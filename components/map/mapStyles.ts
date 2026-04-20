@@ -1,86 +1,97 @@
-/* ==================== components/map/mapStyles.ts ==================== */
-/**
- * All data-overlay sources and layers live here (plants, grid, admin
- * boundaries, place labels). The basemap itself comes from mapThemes.ts
- * and is swapped with `map.setStyle()`; every time the style changes we
- * re-install these layers on top.
+/* ==================== components/map/mapStyles.ts ====================
+ * All data-overlay sources + layers.
  *
- * Layer z-order (bottom → top):
- *   water-stress fill (context)
- *   admin2 line       (districts, zoom ≥ 5)
- *   admin1 line       (provinces/states, zoom ≥ 3)
- *   admin0 line       (national borders)
- *   submarine cables
- *   transmission lines
- *   planned upgrades (dashed)
- *   substations
- *   data centers
- *   plant glow
- *   plant circle
- *   admin1 labels (province names, zoom ≥ 4)
- *   admin0 labels (country names)  ← always on top
- *   place labels  (cities, capitals)
- */
+ * Key changes vs previous:
+ *  - Power plants now have a THREE-LAYER stack: outer pulse, mid glow, core dot.
+ *    The outer pulse scales with capacity so big plants dominate visually (hierarchy).
+ *  - Data centers get the same pulsing treatment.
+ *  - Africa's admin0 borders have a strong cyan glow (keeps the "continent lit up" look)
+ *    while other continents' borders (if ever rendered) stay muted.
+ * ==================================================== */
 
-import type { FeatureCollection, LayerVisibility } from '@/lib/types';
 import type { Map as MapLibreMap, GeoJSONSource } from 'maplibre-gl';
+import type { FeatureCollection, LayerVisibility, ViewMode } from '@/lib/types';
+
+/* ─────────── IDs ─────────── */
 
 export const SOURCE_IDS = {
-  plants: 'plants-source',
-  transmission: 'transmission-source',
-  substations: 'substations-source',
-  dataCenters: 'data-centers-source',
-  waterStress: 'water-stress-source',
-  submarineCables: 'submarine-cables-source',
-  plannedUpgrades: 'planned-upgrades-source',
-  admin0: 'admin0-source',
-  admin1: 'admin1-source',
-  admin2: 'admin2-source',
-  placeLabels: 'place-labels-source',
+  plants: 'plants-src',
+  transmission: 'transmission-src',
+  substations: 'substations-src',
+  dataCenters: 'data-centers-src',
+  waterStress: 'water-stress-src',
+  submarineCables: 'submarine-cables-src',
+  plannedUpgrades: 'planned-upgrades-src',
+  admin0: 'admin0-src',
+  admin1: 'admin1-src',
+  admin2: 'admin2-src',
+  placeLabels: 'place-labels-src',
 } as const;
 
 export const LAYER_IDS = {
-  // data
-  plantsGlow: 'plants-glow',
-  plants: 'plants-circle',
-  transmission: 'transmission-line',
-  substations: 'substations-circle',
-  dataCenters: 'data-centers-circle',
   waterStress: 'water-stress-fill',
+  admin2: 'admin2-line',
+  admin1: 'admin1-line',
+  admin0Glow: 'admin0-glow',
+  admin0: 'admin0-line',
   submarineCables: 'submarine-cables-line',
+  transmission: 'transmission-line',
   plannedUpgrades: 'planned-upgrades-line',
 
-  // admin boundaries
-  admin0: 'admin0-line',
-  admin0Glow: 'admin0-line-glow',
-  admin1: 'admin1-line',
-  admin2: 'admin2-line',
+  substationsGlow: 'substations-glow',
+  substations: 'substations-circle',
 
-  // labels
-  admin0Label: 'admin0-label',
+  // Data centers — three layers for hierarchy
+  dataCentersPulse: 'data-centers-pulse',
+  dataCentersGlow: 'data-centers-glow',
+  dataCenters: 'data-centers-circle',
+
+  plantsHeatmap: 'plants-heatmap',
+
+  // Plants — three layers for hierarchy
+  plantsPulse: 'plants-pulse',
+  plantsGlow: 'plants-glow',
+  plants: 'plants-circle',
+
+  plantsDiamond: 'plants-diamond',
+  plantsClusters: 'plants-clusters',
+  plantsClusterCount: 'plants-cluster-count',
+
   admin1Label: 'admin1-label',
-  placeLabel: 'place-label',
+  admin0Label: 'admin0-label',
   capitalLabel: 'capital-label',
+  placeLabel: 'place-label',
 } as const;
 
 const EMPTY_FC: FeatureCollection = { type: 'FeatureCollection', features: [] };
 
-/* ─────────────── typography ─────────────── */
+/* ─────────── typography ─────────── */
 
-/**
- * Font stacks for SDF text. MapLibre will fall through this list until
- * it finds a font the style's glyph endpoint provides. Our glyph URL
- * (openmaptiles) has Noto Sans Regular/Bold/Italic universally.
- */
 const FONT_BOLD = ['Noto Sans Bold', 'Open Sans Bold', 'Arial Unicode MS Bold'];
 const FONT_REGULAR = ['Noto Sans Regular', 'Open Sans Regular', 'Arial Unicode MS Regular'];
 const FONT_ITALIC = ['Noto Sans Italic', 'Open Sans Italic', 'Arial Unicode MS Regular'];
 
-/* ─────────────── helpers ─────────────── */
+/* ─────────── helpers ─────────── */
 
-function ensureSource(map: MapLibreMap, id: string) {
+function ensureSource(
+  map: MapLibreMap,
+  id: string,
+  opts: { cluster?: boolean; clusterRadius?: number; clusterMaxZoom?: number } = {},
+) {
   if (map.getSource(id)) return;
-  map.addSource(id, { type: 'geojson', data: EMPTY_FC });
+  map.addSource(id, {
+    type: 'geojson',
+    data: EMPTY_FC,
+    cluster: opts.cluster ?? false,
+    clusterRadius: opts.clusterRadius ?? 50,
+    clusterMaxZoom: opts.clusterMaxZoom ?? 6,
+    clusterProperties: opts.cluster
+      ? {
+          sum_mw: ['+', ['coalesce', ['to-number', ['get', 'capacity_mw']], 0]],
+        }
+      : undefined,
+    generateId: true,
+  });
 }
 
 function ensureLayer(map: MapLibreMap, layer: any, beforeId?: string) {
@@ -92,360 +103,624 @@ function ensureLayer(map: MapLibreMap, layer: any, beforeId?: string) {
   }
 }
 
-/* ─────────────── main installer ─────────────── */
+function firstSymbolId(map: MapLibreMap): string | undefined {
+  const layers = map.getStyle()?.layers ?? [];
+  return layers.find((l) => l.type === 'symbol')?.id;
+}
+
+/* ─────────── main installer ─────────── */
 
 export function installMapDataLayers(map: MapLibreMap) {
-  Object.values(SOURCE_IDS).forEach((id) => ensureSource(map, id));
+  ensureSource(map, SOURCE_IDS.plants, { cluster: true, clusterRadius: 45, clusterMaxZoom: 5 });
+  ensureSource(map, SOURCE_IDS.transmission);
+  ensureSource(map, SOURCE_IDS.substations);
+  ensureSource(map, SOURCE_IDS.dataCenters);
+  ensureSource(map, SOURCE_IDS.waterStress);
+  ensureSource(map, SOURCE_IDS.submarineCables);
+  ensureSource(map, SOURCE_IDS.plannedUpgrades);
+  ensureSource(map, SOURCE_IDS.admin0);
+  ensureSource(map, SOURCE_IDS.admin1);
+  ensureSource(map, SOURCE_IDS.admin2);
+  ensureSource(map, SOURCE_IDS.placeLabels);
 
-  /* ─── 1. water stress (background context) ─── */
-  ensureLayer(map, {
-    id: LAYER_IDS.waterStress,
-    type: 'fill',
-    source: SOURCE_IDS.waterStress,
-    paint: {
-      'fill-color': [
-        'interpolate',
-        ['linear'],
-        ['coalesce', ['to-number', ['get', 'stress']], 0],
-        0, '#0c4a6e',
-        0.5, '#3b82f6',
-        1, '#f59e0b',
-        2, '#dc2626',
-      ],
-      'fill-opacity': [
-        'interpolate',
-        ['linear'],
-        ['zoom'],
-        2, 0.08,
-        5, 0.14,
-        8, 0.18,
-      ],
-      'fill-outline-color': 'rgba(255,255,255,0.05)',
-    },
-  });
+  const beforeLabels = firstSymbolId(map);
 
-  /* ─── 2. admin2 boundaries (districts/counties) ─── */
-  ensureLayer(map, {
-    id: LAYER_IDS.admin2,
-    type: 'line',
-    source: SOURCE_IDS.admin2,
-    minzoom: 5,
-    paint: {
-      'line-color': 'rgba(148, 163, 184, 0.35)',
-      'line-width': [
-        'interpolate', ['linear'], ['zoom'],
-        5, 0.25,
-        8, 0.7,
-        11, 1.1,
-      ],
-      'line-opacity': [
-        'interpolate', ['linear'], ['zoom'],
-        5, 0.0,
-        6, 0.18,
-        9, 0.4,
-        12, 0.55,
-      ],
-      'line-dasharray': [2, 3],
-    },
-  });
-
-  /* ─── 3. admin1 boundaries (provinces/states) ─── */
-  ensureLayer(map, {
-    id: LAYER_IDS.admin1,
-    type: 'line',
-    source: SOURCE_IDS.admin1,
-    minzoom: 3,
-    paint: {
-      'line-color': 'rgba(203, 213, 225, 0.5)',
-      'line-width': [
-        'interpolate', ['linear'], ['zoom'],
-        3, 0.35,
-        6, 0.95,
-        10, 1.5,
-      ],
-      'line-opacity': [
-        'interpolate', ['linear'], ['zoom'],
-        3, 0.15,
-        5, 0.45,
-        8, 0.7,
-      ],
-      'line-dasharray': [3, 2],
-    },
-  });
-
-  /* ─── 4a. admin0 glow (halo under borders) ─── */
-  ensureLayer(map, {
-    id: LAYER_IDS.admin0Glow,
-    type: 'line',
-    source: SOURCE_IDS.admin0,
-    layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: {
-      'line-color': 'rgba(34, 211, 238, 0.25)',
-      'line-width': [
-        'interpolate', ['linear'], ['zoom'],
-        1.5, 2.5,
-        4, 4,
-        7, 6,
-      ],
-      'line-opacity': 0.45,
-      'line-blur': 2.5,
-    },
-  });
-
-  /* ─── 4b. admin0 borders (countries) ─── */
-  ensureLayer(map, {
-    id: LAYER_IDS.admin0,
-    type: 'line',
-    source: SOURCE_IDS.admin0,
-    layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: {
-      'line-color': 'rgba(255, 255, 255, 0.55)',
-      'line-width': [
-        'interpolate', ['linear'], ['zoom'],
-        1.5, 0.8,
-        4, 1.3,
-        7, 1.8,
-      ],
-      'line-opacity': 0.9,
-    },
-  });
-
-  /* ─── 5. submarine cables ─── */
-  ensureLayer(map, {
-    id: LAYER_IDS.submarineCables,
-    type: 'line',
-    source: SOURCE_IDS.submarineCables,
-    layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: {
-      'line-color': '#22d3ee',
-      'line-width': ['interpolate', ['linear'], ['zoom'], 2, 1, 6, 2.5, 10, 4],
-      'line-opacity': 0.8,
-      'line-blur': 0.4,
-      'line-dasharray': [3, 2],
-    },
-  });
-
-  /* ─── 6. transmission lines ─── */
-  ensureLayer(map, {
-    id: LAYER_IDS.transmission,
-    type: 'line',
-    source: SOURCE_IDS.transmission,
-    layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: {
-      'line-color': [
-        'match', ['get', 'voltage_class'],
-        '735kV+',    '#ef4444',
-        '500-734kV', '#f97316',
-        '345-499kV', '#fbbf24',
-        '230-344kV', '#38bdf8',
-        '100-229kV', '#22c55e',
-        '31-99kV',   '#a78bfa',
-        '#64748b',
-      ],
-      'line-width': [
-        'interpolate', ['linear'], ['zoom'],
-        3, [
-          'match', ['get', 'voltage_class'],
-          '735kV+', 1.2, '500-734kV', 1.0, '345-499kV', 0.8,
-          '230-344kV', 0.6, '100-229kV', 0.5, '31-99kV', 0.4,
-          0.4,
+  /* ── water stress ── */
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.waterStress,
+      type: 'fill',
+      source: SOURCE_IDS.waterStress,
+      paint: {
+        'fill-color': [
+          'interpolate', ['linear'],
+          ['coalesce', ['to-number', ['get', 'stress']], 0],
+          0, '#0c4a6e',
+          0.5, '#3b82f6',
+          1, '#f59e0b',
+          2, '#dc2626',
         ],
-        8, [
-          'match', ['get', 'voltage_class'],
-          '735kV+', 4.5, '500-734kV', 3.5, '345-499kV', 2.8,
-          '230-344kV', 2.2, '100-229kV', 1.8, '31-99kV', 1.3,
-          1.5,
+        'fill-opacity': [
+          'interpolate', ['linear'], ['zoom'],
+          2, 0.08,
+          5, 0.14,
+          8, 0.2,
         ],
-      ],
-      'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.55, 8, 0.9],
+        'fill-outline-color': 'rgba(255,255,255,0.05)',
+      },
     },
-  });
+    beforeLabels,
+  );
 
-  /* ─── 7. planned upgrades (dashed) ─── */
-  ensureLayer(map, {
-    id: LAYER_IDS.plannedUpgrades,
-    type: 'line',
-    source: SOURCE_IDS.plannedUpgrades,
-    layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: {
-      'line-color': '#fbbf24',
-      'line-width': ['interpolate', ['linear'], ['zoom'], 3, 1, 8, 3],
-      'line-opacity': 0.85,
-      'line-dasharray': [2, 2],
+  /* ── admin2 ── */
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.admin2,
+      type: 'line',
+      source: SOURCE_IDS.admin2,
+      minzoom: 3.5,
+      layout: {
+        'line-cap': 'round',
+        'line-join': 'round',
+        visibility: 'none',
+      },
+      paint: {
+        'line-color': 'rgba(148,163,184,0.55)',
+        'line-width': [
+          'interpolate', ['linear'], ['zoom'],
+          3.5, 0.45,
+          6, 0.9,
+          9, 1.4,
+          12, 1.8,
+        ],
+        'line-opacity': [
+          'interpolate', ['linear'], ['zoom'],
+          3.5, 0.18,
+          5, 0.32,
+          8, 0.5,
+          11, 0.65,
+        ],
+        'line-dasharray': [2, 2],
+        'line-blur': 0.2,
+      },
     },
-  });
+    beforeLabels,
+  );
 
-  /* ─── 8. substations ─── */
-  ensureLayer(map, {
-    id: LAYER_IDS.substations,
-    type: 'circle',
-    source: SOURCE_IDS.substations,
-    paint: {
-      'circle-color': '#e0f2fe',
-      'circle-radius': ['interpolate', ['linear'], ['zoom'], 3, 1.5, 6, 3, 10, 5],
-      'circle-stroke-color': '#0c4a6e',
-      'circle-stroke-width': 1,
-      'circle-opacity': 0.85,
+  /* ── admin1 ── */
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.admin1,
+      type: 'line',
+      source: SOURCE_IDS.admin1,
+      minzoom: 2.2,
+      layout: {
+        'line-cap': 'round',
+        'line-join': 'round',
+      },
+      paint: {
+        'line-color': 'rgba(226,232,240,0.82)',
+        'line-width': [
+          'interpolate', ['linear'], ['zoom'],
+          2.2, 0.8,
+          4, 1.2,
+          7, 1.8,
+          10, 2.4,
+        ],
+        'line-opacity': [
+          'interpolate', ['linear'], ['zoom'],
+          2.2, 0.32,
+          4, 0.55,
+          7, 0.82,
+          10, 0.95,
+        ],
+        'line-dasharray': [3, 2],
+        'line-blur': 0.15,
+      },
     },
-  });
+    beforeLabels,
+  );
 
-  /* ─── 9. data centers ─── */
-  ensureLayer(map, {
-    id: LAYER_IDS.dataCenters,
-    type: 'circle',
-    source: SOURCE_IDS.dataCenters,
-    paint: {
-      'circle-color': '#67e8f9',
-      'circle-radius': ['interpolate', ['linear'], ['zoom'], 3, 3, 6, 5, 10, 7],
-      'circle-stroke-color': '#0891b2',
-      'circle-stroke-width': 1.4,
-      'circle-opacity': 0.92,
+  /* ── admin0 glow (outer halo, strong cyan) ── */
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.admin0Glow,
+      type: 'line',
+      source: SOURCE_IDS.admin0,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': 'rgba(34,211,238,0.75)',
+        'line-width': [
+          'interpolate', ['linear'], ['zoom'],
+          1, 4,
+          3, 6,
+          6, 9,
+          9, 12,
+        ],
+        'line-opacity': [
+          'interpolate', ['linear'], ['zoom'],
+          1, 0.5,
+          3, 0.62,
+          6, 0.72,
+          9, 0.82,
+        ],
+        'line-blur': 4,
+      },
     },
-  });
+    beforeLabels,
+  );
 
-  /* ─── 10. plant glow ─── */
-  ensureLayer(map, {
-    id: LAYER_IDS.plantsGlow,
-    type: 'circle',
-    source: SOURCE_IDS.plants,
-    paint: {
-      'circle-color': ['coalesce', ['get', 'color'], '#94a3b8'],
-      'circle-radius': 8,
-      'circle-opacity': 0.18,
-      'circle-blur': 1.2,
-      'circle-stroke-width': 0,
+  /* ── admin0 line (crisp core cyan stroke — this is what "lights up Africa") ── */
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.admin0,
+      type: 'line',
+      source: SOURCE_IDS.admin0,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': '#67e8f9',
+        'line-width': [
+          'interpolate', ['linear'], ['zoom'],
+          1, 1.6,
+          3, 2.2,
+          6, 3,
+          9, 4,
+        ],
+        'line-opacity': 1,
+      },
     },
-  });
+    beforeLabels,
+  );
 
-  /* ─── 11. plant circles ─── */
-  ensureLayer(map, {
-    id: LAYER_IDS.plants,
-    type: 'circle',
-    source: SOURCE_IDS.plants,
-    paint: {
-      'circle-color': ['coalesce', ['get', 'color'], '#94a3b8'],
-      'circle-radius': 6,
-      'circle-stroke-color': 'rgba(255,255,255,0.35)',
-      'circle-stroke-width': 0.8,
-      'circle-opacity': 0.92,
+  /* ── submarine cables ── */
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.submarineCables,
+      type: 'line',
+      source: SOURCE_IDS.submarineCables,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': '#22d3ee',
+        'line-width': ['interpolate', ['linear'], ['zoom'], 2, 1, 6, 2.5, 10, 4],
+        'line-opacity': 0.82,
+        'line-blur': 0.4,
+        'line-dasharray': [3, 2],
+      },
     },
-  });
+    beforeLabels,
+  );
 
-  /* ──────────────────────────────────────────────
-     12. LABELS — always rendered on top
-     ────────────────────────────────────────────── */
+  /* ── transmission ── */
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.transmission,
+      type: 'line',
+      source: SOURCE_IDS.transmission,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': [
+          'match', ['get', 'voltage_class'],
+          '735kV+', '#ef4444',
+          '500-734kV', '#f97316',
+          '345-499kV', '#fbbf24',
+          '230-344kV', '#38bdf8',
+          '100-229kV', '#22c55e',
+          '31-99kV', '#a78bfa',
+          '#64748b',
+        ],
+        'line-width': [
+          'interpolate', ['linear'], ['zoom'],
+          3, [
+            'match', ['get', 'voltage_class'],
+            '735kV+', 1.4, '500-734kV', 1.1, '345-499kV', 0.9,
+            '230-344kV', 0.7, '100-229kV', 0.55, '31-99kV', 0.4,
+            0.4,
+          ],
+          8, [
+            'match', ['get', 'voltage_class'],
+            '735kV+', 4.5, '500-734kV', 3.5, '345-499kV', 2.8,
+            '230-344kV', 2.2, '100-229kV', 1.8, '31-99kV', 1.3,
+            1.5,
+          ],
+        ],
+        'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.35, 5, 0.6, 8, 0.88],
+      },
+    },
+    beforeLabels,
+  );
 
-  /* admin1 (province/state) labels */
+  /* ── planned upgrades ── */
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.plannedUpgrades,
+      type: 'line',
+      source: SOURCE_IDS.plannedUpgrades,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': '#fbbf24',
+        'line-width': ['interpolate', ['linear'], ['zoom'], 3, 1, 8, 3],
+        'line-opacity': 0.85,
+        'line-dasharray': [2, 2],
+      },
+    },
+    beforeLabels,
+  );
+
+  /* ─────────── substations (glow + core) ─────────── */
+
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.substationsGlow,
+      type: 'circle',
+      source: SOURCE_IDS.substations,
+      paint: {
+        'circle-color': '#e0f2fe',
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 3, 3, 6, 6, 10, 10],
+        'circle-opacity': 0.22,
+        'circle-blur': 0.8,
+      },
+    },
+    beforeLabels,
+  );
+
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.substations,
+      type: 'circle',
+      source: SOURCE_IDS.substations,
+      paint: {
+        'circle-color': '#e0f2fe',
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 3, 1.5, 6, 3, 10, 5],
+        'circle-stroke-color': '#0c4a6e',
+        'circle-stroke-width': 1,
+        'circle-opacity': 0.9,
+      },
+    },
+    beforeLabels,
+  );
+
+  /* ─────────── data centers (pulse + glow + core = hierarchy) ─────────── */
+
+  // Outer pulse — biggest, most diffuse, scales with power if available
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.dataCentersPulse,
+      type: 'circle',
+      source: SOURCE_IDS.dataCenters,
+      paint: {
+        'circle-color': '#67e8f9',
+        'circle-radius': [
+          'interpolate', ['linear'],
+          ['coalesce', ['to-number', ['get', 'power_mw']], ['to-number', ['get', 'capacity_mw']], 20],
+          0, 12,
+          10, 18,
+          50, 26,
+          200, 38,
+          1000, 54,
+        ],
+        'circle-opacity': 0.12,
+        'circle-blur': 1.0,
+      },
+    },
+    beforeLabels,
+  );
+
+  // Mid glow — moderate
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.dataCentersGlow,
+      type: 'circle',
+      source: SOURCE_IDS.dataCenters,
+      paint: {
+        'circle-color': '#67e8f9',
+        'circle-radius': [
+          'interpolate', ['linear'],
+          ['coalesce', ['to-number', ['get', 'power_mw']], ['to-number', ['get', 'capacity_mw']], 20],
+          0, 6,
+          10, 9,
+          50, 13,
+          200, 19,
+          1000, 28,
+        ],
+        'circle-opacity': 0.28,
+        'circle-blur': 0.6,
+      },
+    },
+    beforeLabels,
+  );
+
+  // Crisp core
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.dataCenters,
+      type: 'circle',
+      source: SOURCE_IDS.dataCenters,
+      paint: {
+        'circle-color': '#67e8f9',
+        'circle-radius': [
+          'interpolate', ['linear'],
+          ['coalesce', ['to-number', ['get', 'power_mw']], ['to-number', ['get', 'capacity_mw']], 20],
+          0, 3,
+          10, 4,
+          50, 5.5,
+          200, 7.5,
+          1000, 10,
+        ],
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-width': 1.2,
+        'circle-opacity': 0.95,
+      },
+    },
+    beforeLabels,
+  );
+
+  /* ─────────── plants heatmap ─────────── */
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.plantsHeatmap,
+      type: 'heatmap',
+      source: SOURCE_IDS.plants,
+      maxzoom: 7,
+      layout: { visibility: 'none' },
+      paint: {
+        'heatmap-weight': [
+          'interpolate', ['linear'],
+          ['coalesce', ['to-number', ['get', 'capacity_mw']], 0],
+          0, 0,
+          100, 0.3,
+          500, 0.6,
+          1500, 0.9,
+          5000, 1,
+        ],
+        'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, 6, 2.8],
+        'heatmap-color': [
+          'interpolate', ['linear'], ['heatmap-density'],
+          0, 'rgba(0,0,0,0)',
+          0.15, 'rgba(14,165,233,0.25)',
+          0.35, 'rgba(34,211,238,0.45)',
+          0.55, 'rgba(250,204,21,0.6)',
+          0.75, 'rgba(249,115,22,0.78)',
+          1, 'rgba(239,68,68,0.88)',
+        ],
+        'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 8, 6, 32],
+        'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 5, 1, 7, 0],
+      },
+    },
+    beforeLabels,
+  );
+
+  /* ─────────── plants (pulse + glow + core for hierarchy) ─────────── */
+
+  // Outer pulse — BIGGEST, scales strongly with capacity so 5GW plants dominate
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.plantsPulse,
+      type: 'circle',
+      source: SOURCE_IDS.plants,
+      filter: ['!', ['has', 'point_count']],
+      paint: {
+        'circle-color': ['coalesce', ['get', 'color'], '#94a3b8'],
+        'circle-radius': [
+          'interpolate', ['linear'],
+          ['coalesce', ['to-number', ['get', 'capacity_mw']], 50],
+          0, 12,
+          100, 20,
+          500, 32,
+          1000, 46,
+          5000, 70,
+        ],
+        'circle-opacity': 0.1,
+        'circle-blur': 1.1,
+      },
+    },
+    beforeLabels,
+  );
+
+  // Mid glow
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.plantsGlow,
+      type: 'circle',
+      source: SOURCE_IDS.plants,
+      filter: ['!', ['has', 'point_count']],
+      paint: {
+        'circle-color': ['coalesce', ['get', 'color'], '#94a3b8'],
+        'circle-radius': [
+          'interpolate', ['linear'],
+          ['coalesce', ['to-number', ['get', 'capacity_mw']], 50],
+          0, 7, 100, 12, 500, 19, 1000, 27, 5000, 42,
+        ],
+        'circle-opacity': 0.32,
+        'circle-blur': 0.7,
+      },
+    },
+    beforeLabels,
+  );
+
+  // Crisp core dot
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.plants,
+      type: 'circle',
+      source: SOURCE_IDS.plants,
+      filter: ['!', ['has', 'point_count']],
+      paint: {
+        'circle-color': ['coalesce', ['get', 'color'], '#94a3b8'],
+        'circle-radius': [
+          'interpolate', ['linear'],
+          ['coalesce', ['to-number', ['get', 'capacity_mw']], 50],
+          0, 3, 100, 5, 500, 8, 1000, 11, 5000, 16,
+        ],
+        'circle-stroke-color': 'rgba(255,255,255,0.5)',
+        'circle-stroke-width': 0.7,
+        'circle-opacity': 1,
+      },
+    },
+    beforeLabels,
+  );
+
+  /* ── plant diamonds (alternate Points view) ── */
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.plantsDiamond,
+      type: 'symbol',
+      source: SOURCE_IDS.plants,
+      filter: ['!', ['has', 'point_count']],
+      layout: {
+        'icon-image': 'plant-diamond',
+        'icon-size': [
+          'interpolate', ['linear'],
+          ['coalesce', ['to-number', ['get', 'capacity_mw']], 50],
+          0, 0.25, 100, 0.4, 500, 0.6, 1000, 0.8, 5000, 1.15,
+        ],
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+      },
+      paint: {
+        'icon-color': ['coalesce', ['get', 'color'], '#22d3ee'],
+        'icon-halo-color': 'rgba(255,255,255,0.9)',
+        'icon-halo-width': 1,
+        'icon-halo-blur': 0.3,
+        'icon-opacity': 1,
+      },
+    },
+  );
+
+  /* ── cluster bubbles ── */
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.plantsClusters,
+      type: 'circle',
+      source: SOURCE_IDS.plants,
+      filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': [
+          'step', ['get', 'point_count'],
+          '#22d3ee',
+          10, '#38bdf8',
+          50, '#818cf8',
+          200, '#a855f7',
+          500, '#ec4899',
+        ],
+        'circle-radius': [
+          'step', ['get', 'point_count'],
+          14, 10, 18, 50, 24, 200, 32, 500, 40,
+        ],
+        'circle-stroke-color': 'rgba(255,255,255,0.85)',
+        'circle-stroke-width': 1.5,
+        'circle-opacity': 0.9,
+      },
+    },
+    beforeLabels,
+  );
+
+  ensureLayer(
+    map,
+    {
+      id: LAYER_IDS.plantsClusterCount,
+      type: 'symbol',
+      source: SOURCE_IDS.plants,
+      filter: ['has', 'point_count'],
+      layout: {
+        'text-field': [
+          'case',
+          ['>=', ['get', 'point_count'], 1000],
+          ['concat', ['number-format', ['/', ['get', 'point_count'], 1000], { 'max-fraction-digits': 1 }], 'k'],
+          ['get', 'point_count_abbreviated'],
+        ],
+        'text-font': FONT_BOLD,
+        'text-size': ['step', ['get', 'point_count'], 11, 50, 12, 200, 13],
+        'text-allow-overlap': true,
+      },
+      paint: {
+        'text-color': '#ffffff',
+        'text-halo-color': 'rgba(2,6,23,0.85)',
+        'text-halo-width': 1,
+      },
+    },
+  );
+
+  /* ── labels ── */
   ensureLayer(map, {
     id: LAYER_IDS.admin1Label,
     type: 'symbol',
     source: SOURCE_IDS.admin1,
     minzoom: 4,
+    // dataPrep.prepareAdminBoundaries guarantees:
+    //   - `name` exists and is non-empty
+    //   - `name` is a true subnational name (never the country name)
+    // Features that don't satisfy these are dropped at load time, so
+    // the layer just renders whatever `name` contains.
+    filter: ['has', 'name'],
     layout: {
-      'text-field': [
-        'coalesce',
-        ['get', 'name_en'],      // our own normalized field
-        ['get', 'shapeName'],    // geoBoundaries
-        ['get', 'name'],         // OSM / generic
-        ['get', 'NAME_1'],       // Natural Earth / GADM
-        ['get', 'NAME'],         // GADM older schema
-        '',
-      ],
+      'text-field': ['get', 'name'],
       'text-font': FONT_ITALIC,
-      'text-size': [
-        'interpolate', ['linear'], ['zoom'],
-        4, 9,
-        6, 11,
-        9, 13,
-      ],
+      'text-size': ['interpolate', ['linear'], ['zoom'], 4, 9, 6, 11, 9, 13],
       'text-letter-spacing': 0.08,
       'text-transform': 'uppercase',
       'text-max-width': 8,
-      'text-padding': 4,
+      'text-padding': 25,
+      'text-allow-overlap': false,
       'symbol-placement': 'point',
     },
     paint: {
-      'text-color': 'rgba(226, 232, 240, 0.72)',
-      'text-halo-color': 'rgba(2, 6, 23, 0.85)',
-      'text-halo-width': 1.4,
-      'text-halo-blur': 0.6,
-      'text-opacity': [
-        'interpolate', ['linear'], ['zoom'],
-        4, 0,
-        5, 0.7,
-        8, 0.95,
-      ],
+      'text-color': 'rgba(226,232,240,0.78)',
+      'text-halo-color': 'rgba(2,6,23,0.95)',
+      'text-halo-width': 1.5,
+      'text-halo-blur': 0.8,
+      'text-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0, 5, 0.7, 8, 0.98],
     },
   });
 
-  /* country (admin0) labels — always on top, always readable */
   ensureLayer(map, {
     id: LAYER_IDS.admin0Label,
     type: 'symbol',
     source: SOURCE_IDS.admin0,
+    // Hide country labels once user zooms into a country — past z=5 the
+    // admin1 (region) and place labels take over.
+    maxzoom: 5,
+    filter: ['has', 'name'],
     layout: {
-      'text-field': [
-        'coalesce',
-        ['get', 'name_en'],      // our normalized field
-        ['get', 'shapeName'],    // geoBoundaries
-        ['get', 'NAME_EN'],      // Natural Earth (upper)
-        ['get', 'ADMIN'],        // Natural Earth ADMIN
-        ['get', 'name'],         // OSM / generic
-        ['get', 'NAME'],
-        '',
-      ],
+      'text-field': ['get', 'name'],
       'text-font': FONT_BOLD,
-      'text-size': [
-        'interpolate', ['linear'], ['zoom'],
-        1.5, 10,
-        3, 12,
-        5, 15,
-        8, 18,
-      ],
+      'text-size': ['interpolate', ['linear'], ['zoom'], 1.5, 10, 3, 12, 5, 15],
       'text-letter-spacing': 0.14,
       'text-transform': 'uppercase',
       'text-max-width': 7,
-      'text-padding': 6,
+      // Massive padding so same-name labels collide and get culled
+      'text-padding': 60,
+      'text-allow-overlap': false,
+      'text-ignore-placement': false,
       'symbol-placement': 'point',
     },
     paint: {
       'text-color': '#f8fafc',
-      'text-halo-color': 'rgba(2, 6, 23, 0.92)',
-      'text-halo-width': 1.8,
-      'text-halo-blur': 0.8,
+      'text-halo-color': 'rgba(2,6,23,0.96)',
+      'text-halo-width': 2,
+      'text-halo-blur': 0.9,
+      'text-opacity': ['interpolate', ['linear'], ['zoom'], 1.5, 1, 4, 1, 5, 0],
     },
   });
 
-  /* place labels (cities) — only if we have a placeLabels source with data */
-  ensureLayer(map, {
-    id: LAYER_IDS.placeLabel,
-    type: 'symbol',
-    source: SOURCE_IDS.placeLabels,
-    minzoom: 3,
-    filter: ['!=', ['get', 'capital'], true],
-    layout: {
-      'text-field': ['coalesce', ['get', 'name_en'], ['get', 'name'], ''],
-      'text-font': FONT_REGULAR,
-      'text-size': [
-        'interpolate', ['linear'], ['zoom'],
-        3, 10,
-        6, 12,
-        9, 14,
-      ],
-      'text-anchor': 'top',
-      'text-offset': [0, 0.6],
-      'text-padding': 4,
-      'icon-image': '',
-      'text-max-width': 9,
-    },
-    paint: {
-      'text-color': 'rgba(203, 213, 225, 0.92)',
-      'text-halo-color': 'rgba(2, 6, 23, 0.9)',
-      'text-halo-width': 1.3,
-    },
-  });
-
-  /* capital city labels */
   ensureLayer(map, {
     id: LAYER_IDS.capitalLabel,
     type: 'symbol',
@@ -455,12 +730,7 @@ export function installMapDataLayers(map: MapLibreMap) {
     layout: {
       'text-field': ['coalesce', ['get', 'name_en'], ['get', 'name'], ''],
       'text-font': FONT_BOLD,
-      'text-size': [
-        'interpolate', ['linear'], ['zoom'],
-        2.5, 11,
-        5, 13,
-        8, 16,
-      ],
+      'text-size': ['interpolate', ['linear'], ['zoom'], 2.5, 11, 5, 13, 8, 16],
       'text-anchor': 'top',
       'text-offset': [0, 0.7],
       'text-padding': 6,
@@ -468,14 +738,36 @@ export function installMapDataLayers(map: MapLibreMap) {
     },
     paint: {
       'text-color': '#fef3c7',
-      'text-halo-color': 'rgba(2, 6, 23, 0.95)',
+      'text-halo-color': 'rgba(2,6,23,0.95)',
       'text-halo-width': 1.6,
       'text-halo-blur': 0.5,
     },
   });
+
+  ensureLayer(map, {
+    id: LAYER_IDS.placeLabel,
+    type: 'symbol',
+    source: SOURCE_IDS.placeLabels,
+    minzoom: 3,
+    filter: ['!=', ['get', 'capital'], true],
+    layout: {
+      'text-field': ['coalesce', ['get', 'name_en'], ['get', 'name'], ''],
+      'text-font': FONT_REGULAR,
+      'text-size': ['interpolate', ['linear'], ['zoom'], 3, 10, 6, 12, 9, 14],
+      'text-anchor': 'top',
+      'text-offset': [0, 0.6],
+      'text-padding': 4,
+      'text-max-width': 9,
+    },
+    paint: {
+      'text-color': 'rgba(203,213,225,0.94)',
+      'text-halo-color': 'rgba(2,6,23,0.92)',
+      'text-halo-width': 1.4,
+    },
+  });
 }
 
-/* ─────────────── data updates ─────────────── */
+/* ─────────── data updates ─────────── */
 
 export function updateSourceData(
   map: MapLibreMap,
@@ -484,35 +776,54 @@ export function updateSourceData(
 ) {
   const src = map.getSource(sourceId) as GeoJSONSource | undefined;
   if (!src) return;
-  if (!data || !Array.isArray(data.features) || data.features.length === 0) return;
-  src.setData(data);
+  src.setData(data ?? EMPTY_FC);
 }
 
-/* ─────────────── visibility toggles ─────────────── */
+/* ─────────── visibility ─────────── */
 
-export function applyLayerVisibility(map: MapLibreMap, v: LayerVisibility) {
+export function applyLayerVisibility(
+  map: MapLibreMap,
+  v: LayerVisibility,
+  viewMode: ViewMode = 'cluster',
+) {
+  const plantsVisible = v.plants;
+  const heatmapMode = viewMode === 'heatmap';
+  const clusterMode = viewMode === 'cluster';
+
+  // In cluster mode the glow/pulse attach to individual points only (cluster layer handles the rest)
+  // In points mode, pulse+glow+core all show
+  const showPulseAndGlow = plantsVisible && !heatmapMode;
+
   const visibilityMap: Record<string, boolean> = {
-    // data
-    [LAYER_IDS.plantsGlow]: v.plants,
-    [LAYER_IDS.plants]: v.plants,
-    [LAYER_IDS.transmission]: v.transmission,
-    [LAYER_IDS.substations]: v.substations,
-    [LAYER_IDS.dataCenters]: v.dataCenters,
     [LAYER_IDS.waterStress]: v.waterStress,
+    [LAYER_IDS.admin2]: v.admin2,
+    [LAYER_IDS.admin1]: v.admin1,
+    [LAYER_IDS.admin0]: v.admin0,
+    [LAYER_IDS.admin0Glow]: v.admin0,
     [LAYER_IDS.submarineCables]: v.submarineCables,
+    [LAYER_IDS.transmission]: v.transmission,
     [LAYER_IDS.plannedUpgrades]: v.plannedUpgrades,
 
-    // admin boundaries — default true if not explicitly set
-    [LAYER_IDS.admin0]:     v.admin0 ?? true,
-    [LAYER_IDS.admin0Glow]: v.admin0 ?? true,
-    [LAYER_IDS.admin1]:     v.admin1 ?? true,
-    [LAYER_IDS.admin2]:     v.admin2 ?? false,
+    [LAYER_IDS.substations]: v.substations,
+    [LAYER_IDS.substationsGlow]: v.substations,
 
-    // labels — default true, independent of the boundary lines
-    [LAYER_IDS.admin0Label]:  v.placeLabels ?? true,
-    [LAYER_IDS.admin1Label]:  v.placeLabels ?? true,
-    [LAYER_IDS.placeLabel]:   v.placeLabels ?? true,
-    [LAYER_IDS.capitalLabel]: v.placeLabels ?? true,
+    [LAYER_IDS.dataCenters]: v.dataCenters,
+    [LAYER_IDS.dataCentersGlow]: v.dataCenters,
+    [LAYER_IDS.dataCentersPulse]: v.dataCenters,
+
+    [LAYER_IDS.plantsHeatmap]: plantsVisible && heatmapMode,
+
+    [LAYER_IDS.plantsPulse]: showPulseAndGlow,
+    [LAYER_IDS.plantsGlow]: showPulseAndGlow,
+    [LAYER_IDS.plants]: showPulseAndGlow && !clusterMode,
+    [LAYER_IDS.plantsDiamond]: plantsVisible && !heatmapMode && !clusterMode,
+    [LAYER_IDS.plantsClusters]: plantsVisible && !heatmapMode && clusterMode,
+    [LAYER_IDS.plantsClusterCount]: plantsVisible && !heatmapMode && clusterMode,
+
+    [LAYER_IDS.admin0Label]: v.placeLabels,
+    [LAYER_IDS.admin1Label]: v.placeLabels,
+    [LAYER_IDS.capitalLabel]: v.placeLabels,
+    [LAYER_IDS.placeLabel]: v.placeLabels,
   };
 
   for (const [id, visible] of Object.entries(visibilityMap)) {
@@ -522,23 +833,59 @@ export function applyLayerVisibility(map: MapLibreMap, v: LayerVisibility) {
   }
 }
 
-/* ─────────────── globe / atmosphere (no-op on older maplibre) ─────────────── */
+/** Toggle clustering on the plants source */
+export function setPlantsClustering(map: MapLibreMap, enabled: boolean) {
+  const existing = map.getSource(SOURCE_IDS.plants) as GeoJSONSource | undefined;
+  if (!existing) return;
+  const currentData = (existing as any)._data ?? EMPTY_FC;
+
+  const layersToRemove = [
+    LAYER_IDS.plants,
+    LAYER_IDS.plantsGlow,
+    LAYER_IDS.plantsPulse,
+    LAYER_IDS.plantsClusters,
+    LAYER_IDS.plantsClusterCount,
+    LAYER_IDS.plantsHeatmap,
+    LAYER_IDS.plantsDiamond,
+  ];
+  for (const id of layersToRemove) {
+    if (map.getLayer(id)) map.removeLayer(id);
+  }
+  if (map.getSource(SOURCE_IDS.plants)) map.removeSource(SOURCE_IDS.plants);
+
+  map.addSource(SOURCE_IDS.plants, {
+    type: 'geojson',
+    data: currentData,
+    cluster: enabled,
+    clusterRadius: 45,
+    clusterMaxZoom: 5,
+    clusterProperties: enabled
+      ? { sum_mw: ['+', ['coalesce', ['to-number', ['get', 'capacity_mw']], 0]] }
+      : undefined,
+    generateId: true,
+  });
+
+  installMapDataLayers(map);
+}
+
+/* ─────────── atmosphere + globe fix ─────────── */
 
 export function maybeApplyAtmosphere(map: MapLibreMap) {
   try {
-    if (typeof (map as any).setProjection === 'function') {
-      (map as any).setProjection({ type: 'globe' });
-    }
-    if (typeof (map as any).setFog === 'function') {
-      (map as any).setFog({
-        color: 'rgba(15, 23, 42, 0.6)',
-        'horizon-blend': 0.15,
-        'high-color': 'rgba(30, 40, 60, 0.7)',
-        'space-color': 'rgba(2, 6, 23, 0.95)',
-        'star-intensity': 0.12,
+    map.setProjection({ type: 'globe' } as any);
+  } catch {}
+
+  try {
+    if (typeof (map as any).setSky === 'function') {
+      (map as any).setSky({
+        'sky-color': '#0a0f1d',
+        'sky-horizon-blend': 0.5,
+        'horizon-color': '#1e3a5f',
+        'horizon-fog-blend': 0.6,
+        'fog-color': '#060912',
+        'fog-ground-blend': 0.35,
+        'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 7, 0],
       });
     }
-  } catch (e) {
-    console.warn('Atmosphere setup skipped:', e);
-  }
+  } catch {}
 }

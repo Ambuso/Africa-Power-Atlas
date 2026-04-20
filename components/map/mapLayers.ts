@@ -40,7 +40,11 @@ function ensureSource(map: MapLibreMap, id: string) {
   if (!map.getSource(id)) {
     map.addSource(id, {
       type: 'geojson',
-      data: EMPTY,
+      data: {
+        type: 'FeatureCollection',
+        features: [],
+      },
+      generateId: true,
     });
   }
 }
@@ -63,7 +67,6 @@ export function installMapDataLayers(map: MapLibreMap) {
     ensureSource(map, id);
   });
 
-  // Background contextual layer
   ensureLayer(map, {
     id: LAYER_IDS.waterStress,
     type: 'fill',
@@ -90,7 +93,6 @@ export function installMapDataLayers(map: MapLibreMap) {
     },
   });
 
-  // Boundaries
   ensureLayer(map, {
     id: LAYER_IDS.admin2,
     type: 'line',
@@ -162,7 +164,6 @@ export function installMapDataLayers(map: MapLibreMap) {
     },
   });
 
-  // Submarine cables
   ensureLayer(map, {
     id: LAYER_IDS.submarineCables,
     type: 'line',
@@ -187,7 +188,6 @@ export function installMapDataLayers(map: MapLibreMap) {
     },
   });
 
-  // Transmission
   ensureLayer(map, {
     id: LAYER_IDS.transmission,
     type: 'line',
@@ -247,7 +247,6 @@ export function installMapDataLayers(map: MapLibreMap) {
     },
   });
 
-  // Substations
   ensureLayer(map, {
     id: LAYER_IDS.substations,
     type: 'circle',
@@ -268,7 +267,6 @@ export function installMapDataLayers(map: MapLibreMap) {
     },
   });
 
-  // Data centers
   ensureLayer(map, {
     id: LAYER_IDS.dataCenters,
     type: 'circle',
@@ -289,7 +287,6 @@ export function installMapDataLayers(map: MapLibreMap) {
     },
   });
 
-  // Plant glow
   ensureLayer(map, {
     id: LAYER_IDS.plantsGlow,
     type: 'circle',
@@ -312,7 +309,6 @@ export function installMapDataLayers(map: MapLibreMap) {
     },
   });
 
-  // Plant circles
   ensureLayer(map, {
     id: LAYER_IDS.plants,
     type: 'circle',
@@ -335,7 +331,6 @@ export function installMapDataLayers(map: MapLibreMap) {
     },
   });
 
-  // Planned upgrades
   ensureLayer(map, {
     id: LAYER_IDS.plannedUpgrades,
     type: 'line',
@@ -365,13 +360,21 @@ export function updateSourceData(
   data?: FeatureCollection | null,
 ) {
   const src = map.getSource(id) as GeoJSONSource | undefined;
-  if (!src) return;
 
-  if (!data || !Array.isArray(data.features) || data.features.length === 0) {
+  if (!src) {
+    console.warn(`Source not found: ${id}`);
+    return;
+  }
+
+  if (!data || !Array.isArray(data.features)) {
+    src.setData(EMPTY);
+    console.warn(`Invalid or missing GeoJSON for source: ${id}`);
     return;
   }
 
   src.setData(data);
+  map.triggerRepaint();
+  console.log(`Loaded ${data.features.length} features into ${id}`);
 }
 
 export function applyLayerVisibility(map: MapLibreMap, v: LayerVisibility) {

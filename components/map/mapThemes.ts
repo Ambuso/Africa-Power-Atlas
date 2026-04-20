@@ -1,64 +1,69 @@
-/* ==================== components/map/mapThemes.ts ==================== */
-/**
- * Production basemap styles.
+/* ==================== components/map/mapThemes.ts ====================
+ * Globe-safe basemap registry.
  *
- * Strategy: we use VECTOR tiles wherever possible (MapTiler, Carto) so that
- * country/city labels render as crisp SDF glyphs at every zoom level instead
- * of the blurry raster labels we had before. Satellite imagery stays raster
- * (there is no vector equivalent) but we overlay vector labels on top of it
- * for the "hybrid" look you see in OpenGrid / Mapbox Studio.
- *
- * All styles share:
- *   - a deep navy background so tile gaps never flash white
- *   - a glyph endpoint (required for any `symbol` layers added downstream)
- *   - a sprite endpoint (optional but lets us use icons later)
- *
- * If you have a MapTiler key, set NEXT_PUBLIC_MAPTILER_KEY in .env.local.
- * Without it we fall back gracefully to Carto's free vector basemap.
- */
+ * Default "dark" theme now shows the full world dimmed so Africa
+ * (with its cyan admin0 overlay) becomes the focal point — other
+ * continents are visible but muted for geospatial context.
+ * ==================================================== */
 
+import type { StyleSpecification } from 'maplibre-gl';
 import type { MapThemeKey } from '@/lib/types';
 
 const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY ?? '';
+const STADIA_KEY = process.env.NEXT_PUBLIC_STADIA_KEY ?? '';
 
-/* ─────────────── shared constants ─────────────── */
+const GLYPHS_URL = 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf';
 
-const GLYPHS_URL =
-  'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf';
+/* ─────────── palette ─────────── */
 
-const DEEP_NAVY = '#020617';
-const DEEP_OCEAN = '#010a1a';
+const COLOR_SPACE = '#020617';
+const COLOR_OCEAN = '#050a18';
 
-/* ─────────────── raster sources (satellite only) ─────────────── */
+/* ─────────── globe helper ─────────── */
 
-const ESRI_SATELLITE_SOURCE = {
-  type: 'raster' as const,
-  tiles: [
-    'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  ],
-  tileSize: 256,
-  attribution: 'Imagery © Esri, Maxar, Earthstar Geographics',
-  maxzoom: 19,
-};
+function withGlobeProjection(style: StyleSpecification): StyleSpecification {
+  return {
+    ...style,
+    projection: { type: 'globe' } as any,
+  };
+}
 
-/* ─────────────── vector style URLs ─────────────── */
+/* ─────────── raster tile sources ─────────── */
 
-/**
- * Pick the best available vector style for the requested flavor.
- * Order of preference:
- *   1. MapTiler (if API key configured) — highest quality, best labels
- *   2. Carto vector basemaps (free, no key) — excellent fallback
- */
-function vectorStyleUrl(flavor: 'dark' | 'darkmatter' | 'positron' | 'streets'): string {
+const ESRI_SATELLITE_TILES = [
+  'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+];
+
+/* ─────────── vector style URLs (optional rich themes) ─────────── */
+
+type Flavor = 'dark' | 'darkmatter' | 'positron' | 'streets';
+
+function vectorStyleUrl(flavor: Flavor): string {
   if (MAPTILER_KEY) {
     switch (flavor) {
-      case 'dark':     return `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${MAPTILER_KEY}`;
-      case 'darkmatter': return `https://api.maptiler.com/maps/darkmatter/style.json?key=${MAPTILER_KEY}`;
-      case 'positron': return `https://api.maptiler.com/maps/dataviz-light/style.json?key=${MAPTILER_KEY}`;
-      case 'streets':  return `https://api.maptiler.com/maps/streets-v2-dark/style.json?key=${MAPTILER_KEY}`;
+      case 'dark':
+        return `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${MAPTILER_KEY}`;
+      case 'darkmatter':
+        return `https://api.maptiler.com/maps/darkmatter/style.json?key=${MAPTILER_KEY}`;
+      case 'positron':
+        return `https://api.maptiler.com/maps/dataviz-light/style.json?key=${MAPTILER_KEY}`;
+      case 'streets':
+        return `https://api.maptiler.com/maps/streets-v2-dark/style.json?key=${MAPTILER_KEY}`;
     }
   }
-  // Carto fallback (no key needed, production-grade)
+
+  if (STADIA_KEY) {
+    switch (flavor) {
+      case 'dark':
+      case 'darkmatter':
+        return `https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json?api_key=${STADIA_KEY}`;
+      case 'positron':
+        return `https://tiles.stadiamaps.com/styles/alidade_smooth.json?api_key=${STADIA_KEY}`;
+      case 'streets':
+        return `https://tiles.stadiamaps.com/styles/outdoors.json?api_key=${STADIA_KEY}`;
+    }
+  }
+
   switch (flavor) {
     case 'dark':
     case 'darkmatter':
@@ -70,148 +75,210 @@ function vectorStyleUrl(flavor: 'dark' | 'darkmatter' | 'positron' | 'streets'):
   }
 }
 
-/* ─────────────── hybrid: satellite imagery + vector labels ─────────────── */
+/* ─────────── inline styles ─────────── */
 
 /**
- * Hybrid style is assembled inline because MapLibre can't merge a raster
- * source into a remote vector style. We emulate the look instead: satellite
- * tiles as the base, then a translucent dark wash, then we'll let the vector
- * label style be loaded separately on top via `setStyle` merging in the
- * component. For simplicity we ship it as a self-contained inline style
- * with imagery + our own admin/place label layers rendered from Natural
- * Earth at runtime (admin0/admin1 already come through your data pipeline).
+ * DEFAULT DARK STYLE — CartoCDN dark raster (no API key, free),
+ * composited heavily dimmed so the Africa cyan admin0 overlay dominates.
  */
-const HYBRID_STYLE = {
-  version: 8 as const,
+const DARK_WORLD_STYLE: StyleSpecification = withGlobeProjection({
+  version: 8,
+  name: 'Africa Power Atlas — Dark World',
   glyphs: GLYPHS_URL,
   sources: {
-    esri: ESRI_SATELLITE_SOURCE,
+    'carto-dark': {
+      type: 'raster',
+      tiles: [
+        'https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
+        'https://b.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
+        'https://c.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
+        'https://d.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
+      ],
+      tileSize: 256,
+      attribution:
+        '© <a href="https://carto.com/attributions">CARTO</a> · ' +
+        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxzoom: 19,
+    },
   },
   layers: [
     {
-      id: 'background',
-      type: 'background' as const,
-      paint: { 'background-color': DEEP_NAVY },
+      id: 'space',
+      type: 'background',
+      paint: { 'background-color': COLOR_SPACE },
     },
     {
-      id: 'satellite-base',
-      type: 'raster' as const,
-      source: 'esri',
+      id: 'world-land',
+      type: 'raster',
+      source: 'carto-dark',
       paint: {
-        'raster-opacity': 0.95,
-        'raster-saturation': -0.18,
-        'raster-contrast': 0.18,
-        'raster-brightness-min': 0.04,
-        'raster-brightness-max': 0.96,
+        'raster-opacity': 0.75,
+        'raster-saturation': -0.85,
+        'raster-contrast': -0.15,
+        'raster-brightness-min': 0.0,
+        'raster-brightness-max': 0.55,
       },
     },
     {
-      // Subtle blue wash so the imagery reads as "data-viz satellite"
-      // rather than raw Google Earth.
-      id: 'satellite-wash',
-      type: 'background' as const,
+      id: 'world-wash',
+      type: 'background',
       paint: {
-        'background-color': 'rgba(12, 74, 110, 0.12)',
-        'background-opacity': 0.65,
+        'background-color': 'rgba(6, 18, 40, 0.25)',
+        'background-opacity': 0.5,
       },
     },
   ],
-};
+});
 
-/* ─────────────── pure satellite (for reference/plain imagery) ─────────────── */
-
-const SATELLITE_ONLY_STYLE = {
-  version: 8 as const,
+const HYBRID_STYLE: StyleSpecification = withGlobeProjection({
+  version: 8,
+  name: 'Africa Power Atlas Hybrid',
   glyphs: GLYPHS_URL,
   sources: {
-    esri: ESRI_SATELLITE_SOURCE,
+    esri: {
+      type: 'raster',
+      tiles: ESRI_SATELLITE_TILES,
+      tileSize: 256,
+      attribution: 'Imagery © Esri, Maxar, Earthstar Geographics',
+      maxzoom: 19,
+    },
   },
   layers: [
+    { id: 'background', type: 'background', paint: { 'background-color': COLOR_OCEAN } },
     {
-      id: 'background',
-      type: 'background' as const,
-      paint: { 'background-color': DEEP_NAVY },
+      id: 'satellite-base',
+      type: 'raster',
+      source: 'esri',
+      paint: {
+        'raster-opacity': 0.9,
+        'raster-saturation': -0.2,
+        'raster-contrast': 0.16,
+        'raster-brightness-min': 0.04,
+        'raster-brightness-max': 0.9,
+      },
     },
     {
+      id: 'hybrid-wash',
+      type: 'background',
+      paint: {
+        'background-color': 'rgba(9, 30, 66, 0.18)',
+        'background-opacity': 0.45,
+      },
+    },
+  ],
+});
+
+const SATELLITE_ONLY_STYLE: StyleSpecification = withGlobeProjection({
+  version: 8,
+  name: 'Africa Power Atlas Satellite',
+  glyphs: GLYPHS_URL,
+  sources: {
+    esri: {
+      type: 'raster',
+      tiles: ESRI_SATELLITE_TILES,
+      tileSize: 256,
+      attribution: 'Imagery © Esri, Maxar, Earthstar Geographics',
+      maxzoom: 19,
+    },
+  },
+  layers: [
+    { id: 'background', type: 'background', paint: { 'background-color': COLOR_SPACE } },
+    {
       id: 'satellite',
-      type: 'raster' as const,
+      type: 'raster',
       source: 'esri',
       paint: {
         'raster-opacity': 0.97,
         'raster-saturation': -0.25,
-        'raster-contrast': 0.22,
-        'raster-brightness-min': 0.05,
-        'raster-brightness-max': 0.98,
+        'raster-contrast': 0.18,
+        'raster-brightness-min': 0.03,
+        'raster-brightness-max': 0.93,
       },
     },
   ],
-};
+});
 
-/* ─────────────── THEME REGISTRY ─────────────── */
+const MINIMAL_DARK_STYLE: StyleSpecification = withGlobeProjection({
+  version: 8,
+  name: 'Africa Power Atlas Minimal',
+  glyphs: GLYPHS_URL,
+  sources: {},
+  layers: [
+    { id: 'background', type: 'background', paint: { 'background-color': '#040816' } },
+  ],
+});
 
-export const MAP_THEMES = {
-  /**
-   * Dark vector — default. SDF labels, crisp country/city names, proper
-   * admin boundaries baked in. This is the "production" look.
-   */
+export interface MapThemeEntry {
+  label: string;
+  style: string | StyleSpecification;
+}
+
+export interface MapThemeMetaEntry {
+  label: string;
+  description: string;
+  accent: string;
+}
+
+export const MAP_THEMES: Record<MapThemeKey, MapThemeEntry> = {
   dark: {
     label: 'Dark',
-    style: vectorStyleUrl('dark'),
+    style: DARK_WORLD_STYLE,
   },
-
-  /**
-   * Cartographic light — for presentations, print exports, daytime viewing.
-   */
   light: {
     label: 'Light',
     style: vectorStyleUrl('positron'),
   },
-
-  /**
-   * Detailed streets — good for zooming into cities, shows roads & POIs.
-   */
   streets: {
     label: 'Streets',
     style: vectorStyleUrl('streets'),
   },
-
-  /**
-   * Satellite imagery + vector labels overlay. Best of both worlds —
-   * you see the actual terrain but still get readable country names.
-   */
   hybrid: {
     label: 'Hybrid',
     style: HYBRID_STYLE,
   },
-
-  /**
-   * Pure satellite imagery, minimal labels. Use when the data itself
-   * is the story and basemap should recede.
-   */
   satellite: {
     label: 'Satellite',
     style: SATELLITE_ONLY_STYLE,
   },
-
-  /**
-   * Heavily desaturated dark — emphasizes data overlays, minimal base.
-   */
   minimal: {
     label: 'Minimal',
-    style: vectorStyleUrl('darkmatter'),
+    style: MINIMAL_DARK_STYLE,
   },
-} as const satisfies Record<MapThemeKey, { label: string; style: string | object }>;
-
-/* ─────────────── basemap metadata (shown in sidebar swatches) ─────────────── */
-
-export const MAP_THEME_META: Record<
-  MapThemeKey,
-  { label: string; description: string; accent: string }
-> = {
-  dark:      { label: 'Dark',      description: 'Data-viz dark',      accent: '#22d3ee' },
-  light:     { label: 'Light',     description: 'Cartographic',       accent: '#0ea5e9' },
-  streets:   { label: 'Streets',   description: 'Roads & detail',     accent: '#f59e0b' },
-  hybrid:    { label: 'Hybrid',    description: 'Satellite + labels', accent: '#10b981' },
-  satellite: { label: 'Satellite', description: 'Imagery only',       accent: '#eab308' },
-  minimal:   { label: 'Minimal',   description: 'Subdued base',       accent: '#a78bfa' },
 };
+
+export const MAP_THEME_META: Record<MapThemeKey, MapThemeMetaEntry> = {
+  dark: {
+    label: 'Dark',
+    description: 'Global context, Africa highlighted',
+    accent: '#22d3ee',
+  },
+  light: {
+    label: 'Light',
+    description: 'Cartographic',
+    accent: '#0ea5e9',
+  },
+  streets: {
+    label: 'Streets',
+    description: 'Roads & detail',
+    accent: '#f59e0b',
+  },
+  hybrid: {
+    label: 'Hybrid',
+    description: 'Satellite + overlays',
+    accent: '#10b981',
+  },
+  satellite: {
+    label: 'Satellite',
+    description: 'Imagery only',
+    accent: '#eab308',
+  },
+  minimal: {
+    label: 'Minimal',
+    description: 'No basemap',
+    accent: '#a78bfa',
+  },
+};
+
+export function isCompositedRasterTheme(key: MapThemeKey): boolean {
+  return key === 'dark' || key === 'hybrid' || key === 'satellite' || key === 'minimal';
+}

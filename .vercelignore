@@ -1,0 +1,29 @@
+# dependencies
+node_modules
+
+# python env
+venv
+.venv
+
+# next build
+.next
+
+# git
+.git
+
+# local data / heavy files
+cache
+app/cache
+source_data
+
+# raw geospatial formats
+*.zip
+*.shp
+*.dbf
+*.gpkg
+*.tif
+*.tiff
+*.parquet
+*.csv
+
+# optional large geojsons (if not needed at runtime)`

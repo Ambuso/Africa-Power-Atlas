@@ -1,48 +1,48 @@
 /* ==================== app/page.tsx ==================== */
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 import LayerPanel from '@/components/sidebar/LayerPanel';
 import TopBar from '@/components/topbar/TopBar';
 import MapLegend from '@/components/map/MapLegend';
+import StatsPanel from '@/components/panels/StatsPanel';
+import LoadingScreen from '@/components/map/LoadingScreen';
 import { loadAndPreparePowerGridData } from '@/components/map/dataPrep';
-import type { MapDataBundle, LayerVisibility, MapThemeKey } from '@/lib/types';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { ALL_AFRICAN_ISO2, featureMatchesCountries, resolveIso2 } from '@/lib/countries';
+import type {
+  MapDataBundle,
+  LayerVisibility,
+  MapThemeKey,
+  ViewMode,
+} from '@/lib/types';
 
+// Map is dynamic (client-only, MapLibre requires window)
 const MapCanvas = dynamic(() => import('@/components/map/MapCanvas'), {
   ssr: false,
-  loading: () => (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#020617]">
-      <div className="text-center">
-        <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-400/10 shadow-[0_0_70px_-18px_rgba(34,211,238,0.55)]">
-          <div className="h-12 w-12 animate-[spin_3.2s_linear_infinite] rounded-full border-4 border-cyan-300 border-t-transparent" />
-        </div>
-        <h1 className="mb-2 text-4xl font-bold tracking-[-0.04em] text-white">
-          AFRICA POWER GRID
-        </h1>
-        <p className="text-sm uppercase tracking-[0.30em] text-slate-400">
-          Loading intelligence layers
-        </p>
-      </div>
-    </div>
-  ),
+  loading: () => null,
 });
 
-const ALL_AFRICAN_ISO2 = [
-  'ZA','EG','NG','DZ','MA','LY','TN','ET','KE','TZ','UG','RW','GH','CI','SN',
-  'ZM','ZW','MZ','AO','CD','CM','NA','BW','MW','MG','SD','SS',
-];
-
 export default function HomePage() {
+  /* ─── data ─── */
   const [data, setData] = useState<MapDataBundle | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [theme, setTheme] = useState<MapThemeKey>('dark');
+  /* ─── loading flow state ─── */
+  // dataLoaded    → GeoJSON fetch completed
+  // mapReady      → MapCanvas has installed layers + pushed data + first paint happened
+  // loaderGone    → fade-out animation completed → we can unmount LoadingScreen
+  const [mapReady, setMapReady] = useState(false);
+  const [loaderGone, setLoaderGone] = useState(false);
 
-  /* Admin boundaries + labels default ON — they're what makes the map readable. */
+  /* ─── UI state ─── */
+  const [theme, setTheme] = useState<MapThemeKey>('dark');
+  const [viewMode, setViewMode] = useState<ViewMode>('points');
+  const [bubbleScale, setBubbleScale] = useState(1.0);
+
   const [visibleLayers, setVisibleLayers] = useState<LayerVisibility>({
     plants: true,
     dataCenters: true,
@@ -52,7 +52,7 @@ export default function HomePage() {
     plannedUpgrades: false,
     waterStress: false,
     admin0: true,
-    admin1: true,
+    admin1: false,
     admin2: false,
     placeLabels: true,
   });
@@ -60,80 +60,97 @@ export default function HomePage() {
   const [renewableOnly, setRenewableOnly] = useState(false);
   const [selectedFuels, setSelectedFuels] = useState<string[]>([]);
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-  const [bubbleScale, setBubbleScale] = useState(1.2);
 
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        setLoading(true);
-        setLoadError(null);
-        const result = await loadAndPreparePowerGridData();
-        if (!cancelled) setData(result);
-      } catch (error) {
-        console.error('Failed to load power grid data:', error);
-        if (!cancelled) {
-          setLoadError(error instanceof Error ? error.message : 'Unable to load map data.');
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    load();
-    return () => { cancelled = true; };
-  }, []);
+  /* ─── effects ─── */
 
-  const handleVisibilityChange = (key: keyof LayerVisibility) => {
-    setVisibleLayers((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const handleToggleFuel = (fuel: string) => {
-    setSelectedFuels((prev) =>
-      prev.includes(fuel) ? prev.filter((item) => item !== fuel) : [...prev, fuel],
-    );
-  };
-
-  const handleResetFuelFilter = () => {
-    setSelectedFuels([]);
-    setRenewableOnly(false);
-  };
-
-  const handleToggleCountry = (code: string) => {
-    setSelectedCountries((prev) =>
-      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
-    );
-  };
-
-  const handleSelectAllCountries = () => setSelectedCountries([...ALL_AFRICAN_ISO2]);
-  const handleClearCountries = () => setSelectedCountries([]);
-
-  const handleRetryLoad = async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
       setLoadError(null);
       const result = await loadAndPreparePowerGridData();
       setData(result);
     } catch (error) {
-      console.error('Retry failed:', error);
-      setLoadError(error instanceof Error ? error.message : 'Unable to reload map data.');
+      console.error('Failed to load power grid data:', error);
+      setLoadError(
+        error instanceof Error ? error.message : 'Unable to load map data.',
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        const result = await loadAndPreparePowerGridData();
+        if (!cancelled) setData(result);
+      } catch (err) {
+        if (!cancelled) {
+          setLoadError(err instanceof Error ? err.message : 'Unable to load map data.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  /* Safety net: if something gets stuck, still reveal the map after 8s */
+  useEffect(() => {
+    const t = setTimeout(() => setMapReady(true), 8000);
+    return () => clearTimeout(t);
+  }, []);
+
+  /* ─── handlers ─── */
+
+  const handleVisibilityChange = useCallback((key: keyof LayerVisibility) => {
+    setVisibleLayers((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+
+  const handleToggleFuel = useCallback((fuel: string) => {
+    setSelectedFuels((prev) =>
+      prev.includes(fuel) ? prev.filter((f) => f !== fuel) : [...prev, fuel],
+    );
+  }, []);
+
+  const handleResetFuelFilter = useCallback(() => {
+    setSelectedFuels([]);
+    setRenewableOnly(false);
+  }, []);
+
+  const handleToggleCountry = useCallback((raw: string) => {
+    const iso2 = resolveIso2(raw) ?? raw;
+    setSelectedCountries((prev) =>
+      prev.includes(iso2) ? prev.filter((c) => c !== iso2) : [...prev, iso2],
+    );
+  }, []);
+
+  const handleSelectAllCountries = useCallback(
+    () => setSelectedCountries([...ALL_AFRICAN_ISO2]),
+    [],
+  );
+  const handleClearCountries = useCallback(() => setSelectedCountries([]), []);
+
+  const handleMapReady = useCallback(() => {
+    setMapReady(true);
+  }, []);
+
+  const handleLoaderFadeComplete = useCallback(() => {
+    setLoaderGone(true);
+  }, []);
+
+  /* ─── derived ─── */
 
   const visiblePlantCount = useMemo(() => {
     const plants = data?.plants?.plants?.features ?? [];
     return plants.filter((f) => {
       const renewable = f.properties?.renewable === true;
       const fuel = f.properties?.fuel;
-      const country =
-        f.properties?.country ??
-        f.properties?.iso3 ??
-        f.properties?.country_code ??
-        '';
       if (renewableOnly && !renewable) return false;
-      if (selectedFuels.length && !selectedFuels.includes(fuel)) return false;
-      if (selectedCountries.length && !selectedCountries.includes(country)) return false;
+      if (selectedFuels.length && !selectedFuels.includes(String(fuel))) return false;
+      if (!featureMatchesCountries(f.properties as any, selectedCountries)) return false;
       return true;
     }).length;
   }, [data, renewableOnly, selectedFuels, selectedCountries]);
@@ -141,30 +158,44 @@ export default function HomePage() {
   const totalGW = data?.plants?.totalGW ?? '0.0';
   const totalPlants = data?.plants?.totalPlants ?? 0;
 
+  /* Loading is "truly ready" when BOTH data has arrived AND map has had
+   * its first paint. This keeps the loader on screen through the most
+   * expensive step (GeoJSON parsing + first GPU paint of thousands of points)
+   * so the user never sees a half-rendered globe.
+   */
+  const readyForFadeOut = !loading && mapReady;
+
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-[#020617] text-white">
+    <main className="relative h-screen w-screen overflow-hidden bg-[#070912] text-white">
+      {/* Map always mounts immediately so it can start fetching tiles
+          behind the loading screen */}
       <MapCanvas
         theme={theme}
-        onThemeChange={setTheme}
         visibleLayers={visibleLayers}
-        onVisibilityChange={handleVisibilityChange}
+        viewMode={viewMode}
         data={data}
         selectedFuels={selectedFuels}
-        onToggleFuel={handleToggleFuel}
-        onResetFuelFilter={handleResetFuelFilter}
         renewableOnly={renewableOnly}
-        onRenewableOnlyChange={setRenewableOnly}
         selectedCountries={selectedCountries}
-        onToggleCountry={handleToggleCountry}
         bubbleScale={bubbleScale}
-        onBubbleScaleChange={setBubbleScale}
+        onMapReady={handleMapReady}
       />
+
+      {/* Loading screen — fades out when readyForFadeOut, then unmounts */}
+      {!loaderGone && (
+        <LoadingScreen
+          ready={readyForFadeOut}
+          onFadeComplete={handleLoaderFadeComplete}
+        />
+      )}
 
       <TopBar
         selectedCountries={selectedCountries}
         onToggleCountry={handleToggleCountry}
         onSelectAllCountries={handleSelectAllCountries}
         onClearCountries={handleClearCountries}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
         bubbleScale={bubbleScale}
         onBubbleScaleChange={setBubbleScale}
         renewableOnly={renewableOnly}
@@ -172,6 +203,7 @@ export default function HomePage() {
         totalGW={totalGW}
         totalPlants={totalPlants}
         visiblePlantCount={visiblePlantCount}
+        loading={loading}
       />
 
       <LayerPanel
@@ -190,21 +222,18 @@ export default function HomePage() {
         visiblePlantCount={visiblePlantCount}
       />
 
+      <StatsPanel
+        countryStats={data?.plants?.countryStats ?? []}
+        techStats={data?.plants?.techStats ?? []}
+        totalGW={totalGW}
+        selectedCountries={selectedCountries}
+        onCountryClick={handleToggleCountry}
+      />
+
       <MapLegend visibility={visibleLayers} />
 
-      <div className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.08),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.07),transparent_28%)]" />
-
-      {loading && (
-        <div className="pointer-events-none absolute bottom-5 left-1/2 z-50 -translate-x-1/2">
-          <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-slate-950/85 px-4 py-2.5 text-sm text-slate-200 shadow-2xl backdrop-blur-md">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-cyan-400" />
-            Loading infrastructure layers...
-          </div>
-        </div>
-      )}
-
       {loadError && (
-        <div className="absolute bottom-5 left-1/2 z-50 w-[min(92vw,520px)] -translate-x-1/2 rounded-[24px] border border-red-500/25 bg-slate-950/92 p-5 shadow-2xl backdrop-blur-xl">
+        <div className="absolute bottom-6 left-1/2 z-50 w-[min(92vw,520px)] -translate-x-1/2 rounded-[22px] border border-red-500/25 bg-slate-950/95 p-5 shadow-2xl backdrop-blur-xl animate-fade-in-up">
           <div className="mb-3 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-500/10 text-red-300">
               <AlertTriangle className="h-5 w-5" />
@@ -218,7 +247,7 @@ export default function HomePage() {
           </div>
           <p className="mb-4 text-sm leading-6 text-slate-300">{loadError}</p>
           <button
-            onClick={handleRetryLoad}
+            onClick={load}
             className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10"
           >
             <RefreshCw className="h-4 w-4" />
