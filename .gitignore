@@ -17,3 +17,5 @@ cache/
 *.cpg
 *.geojson
 *.csv
+.env*.local
+.env

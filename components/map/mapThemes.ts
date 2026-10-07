@@ -11,6 +11,7 @@ import type { MapThemeKey } from '@/lib/types';
 
 const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY ?? '';
 const STADIA_KEY = process.env.NEXT_PUBLIC_STADIA_KEY ?? '';
+const GEOAPIFY_KEY = process.env.NEXT_PUBLIC_GEOAPIFY_KEY ?? '';
 
 const GLYPHS_URL = 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf';
 
@@ -64,6 +65,20 @@ function vectorStyleUrl(flavor: Flavor): string {
     }
   }
 
+  if (GEOAPIFY_KEY) {
+    const g = (name: string) =>
+      `https://maps.geoapify.com/v1/styles/${name}/style.json?apiKey=${GEOAPIFY_KEY}`;
+    switch (flavor) {
+      case 'dark':
+      case 'darkmatter':
+        return g('dark-matter-dark-grey');
+      case 'positron':
+        return g('positron');
+      case 'streets':
+        return g('osm-bright');
+    }
+  }
+
   switch (flavor) {
     case 'dark':
     case 'darkmatter':
@@ -89,14 +104,11 @@ const DARK_WORLD_STYLE: StyleSpecification = withGlobeProjection({
     'carto-dark': {
       type: 'raster',
       tiles: [
-        'https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
-        'https://b.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
-        'https://c.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
-        'https://d.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
+        `https://maps.geoapify.com/v1/tile/dark-matter-dark-grey/{z}/{x}/{y}.png?apiKey=${GEOAPIFY_KEY}`,
       ],
       tileSize: 256,
       attribution:
-        '© <a href="https://carto.com/attributions">CARTO</a> · ' +
+        '© <a href="https://www.geoapify.com/">Geoapify</a> · © <a href="https://openmaptiles.org/">OpenMapTiles</a> · ' +
         '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxzoom: 19,
     },
