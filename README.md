@@ -1,95 +1,99 @@
-# Africa Power Grid Map
+# Africa Power Atlas
 
-A clean Next.js + MapLibre project for exploring African power infrastructure.
+An interactive map of Africa's power infrastructure: power plants, transmission lines, substations, submarine cables, data centers and water stress, all on one globe.
 
-## What is included
+**Live map:** https://africapowergrid.vercel.app/
 
-- Map themes (`components/map/mapThemes.ts`)
-- Fuel colors (`components/map/fuelColors.ts`)
-- Data preparation (`components/map/dataPrep.ts`)
-- Map rendering (`components/map/MapCanvas.tsx`)
-- Layer/filter sidebar (`components/sidebar/LayerPanel.tsx`)
-- Data extraction / normalization script (`scripts/prepare_data.py`)
-- Renewable-only and per-fuel filters
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Sources["Public data sources"]
+        S1["WRI Global Power Plant Database"]
+        S2["World Bank Africa grid map 2017"]
+        S3["OpenStreetMap Overpass API"]
+        S4["TeleGeography submarine cables"]
+        S5["WRI Aqueduct 4.0"]
+        S6["Natural Earth"]
+    end
+
+    Sources --> P["scripts/prepare_data.py<br/>GeoPandas and pandas"]
+    P --> C[("cache/<br/>raw downloads")]
+    P --> D[("public/data/<br/>GeoJSON layers")]
+    D --> L["components/map/dataPrep.ts<br/>load, normalize fuels, flag renewables"]
+    L --> M["components/map/MapCanvas.tsx<br/>MapLibre GL layers"]
+    M --> U["Layer panel, legend,<br/>stats panel, search"]
+```
+
+The project has two parts. A Python script downloads the public datasets, clips them to Africa and writes clean GeoJSON files. A Next.js app then loads those files in the browser and draws them with MapLibre GL.
+
+## What the map shows
+
+| Layer | Source |
+|---|---|
+| Power plants | WRI Global Power Plant Database |
+| Transmission lines | World Bank Africa Electricity Transmission and Distribution Grid Map (2017) |
+| Planned upgrades | Derived from the transmission layer |
+| Substations | OpenStreetMap, through the Overpass API |
+| Submarine cables | TeleGeography Submarine Cable Map |
+| Data centers | OpenStreetMap plus a curated list of major sites |
+| Water stress | WRI Aqueduct 4.0 country rankings |
+| Countries, provinces, place labels | Natural Earth |
+
+## Features
+
+- Filter power plants by fuel type, or show renewables only
+- View plants as points, clusters or a heatmap
+- Search by country or region
+- Six basemap themes: Dark, Light, Streets, Hybrid, Satellite and Minimal
+- Stats panel and map legend
+
+## Run it locally
+
+You need Node.js and Python 3.
+
+```bash
+git clone https://github.com/Ambuso/Africa-Power-Atlas.git
+cd Africa-Power-Atlas
+
+npm install
+pip install geopandas pandas requests
+
+npm run prepare:data   # downloads the sources and writes public/data/
+npm run dev            # http://localhost:3000
+```
+
+The prepared GeoJSON files are not stored in the repository, so run `prepare:data` before the first start. The substations step queries OpenStreetMap and can take a few minutes.
+
+Useful options for the data script:
+
+```bash
+python scripts/prepare_data.py --only plants,transmission   # run selected steps
+python scripts/prepare_data.py --force                      # ignore the cache and download again
+```
+
+### Optional basemap keys
+
+The map works without any API key and falls back to free CARTO basemaps. For richer Light and Streets themes, add one of these to `.env.local`:
+
+```
+NEXT_PUBLIC_MAPTILER_KEY=
+NEXT_PUBLIC_STADIA_KEY=
+NEXT_PUBLIC_GEOAPIFY_KEY=
+```
 
 ## Project structure
 
-```text
-app/
-components/
-  map/
-  sidebar/
-lib/
-public/data/
-scripts/
-raw/
+```
+app/                  Next.js pages and global styles
+components/map/       map canvas, layers, themes, legend, data loading
+components/sidebar/   layer and filter panel
+components/panels/    stats panel
+components/topbar/    search and view mode
+lib/                  shared types and country list
+scripts/              prepare_data.py, the data pipeline
 ```
 
-## Install
+## Built with
 
-```bash
-npm install
-python -m pip install requests
-```
-
-## Prepare data
-
-Put your raw GeoJSON files inside `raw/` and run:
-
-```bash
-npm run prepare:data
-```
-
-The script writes prepared files to:
-
-- `public/data/plants/africa_power_plants.geojson`
-- `public/data/grid/africa_transmission.geojson`
-- `public/data/grid/africa_substations.geojson`
-- `public/data/grid/africa_submarine_cables.geojson`
-- `public/data/digital/africa_datacenters.geojson`
-- `public/data/context/africa_water_stress.geojson`
-
-## Run
-
-macOS / Linux:
-
-```bash
-rm -rf .next
-npm run dev
-```
-
-Windows PowerShell:
-
-```powershell
-rd /s /q .next
-npm run dev
-```
-
-## Map themes configuration
-
-All basemap themes live in `components/map/mapThemes.ts`.
-Each theme object contains:
-
-- `label`: display name in the UI
-- `style`: either a remote style URL or inline style JSON
-- `preview`: metadata you can use later for UI gradients/previews
-- `description`: short text shown in the panel
-- `atmosphere`: optional fog / globe styling metadata
-
-`getAtmosphereForTheme(themeKey)` returns a theme-specific atmosphere object and falls back to the dark theme if one is missing.
-
-## Renewable filters
-
-Renewable logic is centralized in `components/map/dataPrep.ts`.
-During plant preparation:
-
-- fuel values are normalized (`Solar`, `Wind`, `Hydro`, etc.)
-- each feature gets `properties.renewable`
-- the UI can filter with:
-  - a global `renewableOnly` toggle
-  - per-fuel chip filters
-
-## Notes
-
-- Placeholder GeoJSON files are included so the app boots without 404s.
-- If you hit a new compile/runtime error, replace the affected file with the one from this scaffold and clear `.next` again.
+Next.js, React, TypeScript, MapLibre GL, Tailwind CSS, Python, GeoPandas
