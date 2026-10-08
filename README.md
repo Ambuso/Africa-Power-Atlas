@@ -67,16 +67,19 @@ npm run dev
 
 ## Map themes configuration
 
-All basemap themes live in `components/map/mapThemes.ts`.
-Each theme object contains:
+All basemap themes live in `components/map/mapThemes.ts`. They need no API key:
 
-- `label`: display name in the UI
-- `style`: either a remote style URL or inline style JSON
-- `preview`: metadata you can use later for UI gradients/previews
-- `description`: short text shown in the panel
-- `atmosphere`: optional fog / globe styling metadata
+| Theme | Source |
+| --- | --- |
+| Dark (default) | Vector tiles from [OpenFreeMap](https://openfreemap.org) + shaded relief from AWS Terrain Tiles |
+| Light / Streets | OpenFreeMap hosted `positron` / `liberty` styles |
+| Hybrid | Esri World Imagery + vector borders, roads and labels |
+| Satellite | Esri World Imagery |
+| Minimal | Land / water silhouette only |
 
-`getAtmosphereForTheme(themeKey)` returns a theme-specific atmosphere object and falls back to the dark theme if one is missing.
+Optional: set `NEXT_PUBLIC_MAPTILER_KEY` in `.env.local` to use MapTiler for Light / Streets instead.
+
+Overlay labels use single-font Noto Sans stacks, so they render with any of these glyph servers.
 
 ## Renewable filters
 

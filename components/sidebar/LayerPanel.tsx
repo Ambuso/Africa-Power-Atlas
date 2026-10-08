@@ -512,12 +512,12 @@ function Section({
 
 function ThemeSwatch({ themeKey }: { themeKey: MapThemeKey }) {
   const gradients: Record<MapThemeKey, string> = {
-    dark:      'linear-gradient(135deg, #0a1328 0%, #0f1f3a 50%, #0e4a6e 100%)',
+    dark:      'linear-gradient(135deg, #071226 0%, #0f1a2e 45%, #1b2a44 70%, #0e4a6e 100%)',
     light:     'linear-gradient(135deg, #eef2f7 0%, #cbd5e1 50%, #94a3b8 100%)',
-    streets:   'linear-gradient(135deg, #1a2640 0%, #334466 45%, #6b4418 100%)',
+    streets:   'linear-gradient(135deg, #f8f4ec 0%, #d9e8c8 45%, #f6c96b 75%, #9cc7e6 100%)',
     hybrid:    'linear-gradient(135deg, #0a2e4a 0%, #0f4a2e 50%, #5a3b14 100%)',
     satellite: 'linear-gradient(135deg, #0a3a2a 0%, #5a3b14 55%, #0f2a4e 100%)',
-    minimal:   'linear-gradient(135deg, #060910 0%, #0d1422 100%)',
+    minimal:   'linear-gradient(135deg, #040816 0%, #0b1222 60%, #111a2e 100%)',
   };
 
   return (

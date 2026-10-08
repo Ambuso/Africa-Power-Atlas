@@ -67,9 +67,11 @@ const EMPTY_FC: FeatureCollection = { type: 'FeatureCollection', features: [] };
 
 /* ─────────── typography ─────────── */
 
-const FONT_BOLD = ['Noto Sans Bold', 'Open Sans Bold', 'Arial Unicode MS Bold'];
-const FONT_REGULAR = ['Noto Sans Regular', 'Open Sans Regular', 'Arial Unicode MS Regular'];
-const FONT_ITALIC = ['Noto Sans Italic', 'Open Sans Italic', 'Arial Unicode MS Regular'];
+// Single-font stacks: glyph servers (OpenFreeMap, MapTiler) serve one font
+// per request, and a combined stack 404s and silently drops every label.
+const FONT_BOLD = ['Noto Sans Bold'];
+const FONT_REGULAR = ['Noto Sans Regular'];
+const FONT_ITALIC = ['Noto Sans Italic'];
 
 /* ─────────── helpers ─────────── */
 
@@ -870,22 +872,34 @@ export function setPlantsClustering(map: MapLibreMap, enabled: boolean) {
 
 /* ─────────── atmosphere + globe fix ─────────── */
 
-export function maybeApplyAtmosphere(map: MapLibreMap) {
+export function maybeApplyAtmosphere(map: MapLibreMap, light = false) {
   try {
     map.setProjection({ type: 'globe' } as any);
   } catch {}
 
   try {
     if (typeof (map as any).setSky === 'function') {
-      (map as any).setSky({
-        'sky-color': '#0a0f1d',
-        'sky-horizon-blend': 0.5,
-        'horizon-color': '#1e3a5f',
-        'horizon-fog-blend': 0.6,
-        'fog-color': '#060912',
-        'fog-ground-blend': 0.35,
-        'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 7, 0],
-      });
+      (map as any).setSky(
+        light
+          ? {
+              'sky-color': '#bcd7f0',
+              'sky-horizon-blend': 0.5,
+              'horizon-color': '#e2edf8',
+              'horizon-fog-blend': 0.6,
+              'fog-color': '#f1f5f9',
+              'fog-ground-blend': 0.3,
+              'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 7, 0],
+            }
+          : {
+              'sky-color': '#0a0f1d',
+              'sky-horizon-blend': 0.5,
+              'horizon-color': '#1e3a5f',
+              'horizon-fog-blend': 0.6,
+              'fog-color': '#060912',
+              'fog-ground-blend': 0.35,
+              'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 7, 0],
+            },
+      );
     }
   } catch {}
 }

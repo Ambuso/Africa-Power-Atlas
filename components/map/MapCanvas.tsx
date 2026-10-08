@@ -31,7 +31,7 @@ import type {
   MapThemeKey,
   ViewMode,
 } from '@/lib/types';
-import { MAP_THEMES } from './mapThemes';
+import { MAP_THEMES, isLightTheme } from './mapThemes';
 import {
   SOURCE_IDS,
   LAYER_IDS,
@@ -75,25 +75,6 @@ function registerPlantIcon(map: maplibregl.Map) {
     map.addImage('plant-diamond', data as any, { sdf: true });
   } catch (e) {
     console.warn('[MapLibre] failed to register plant diamond icon', e);
-  }
-}
-
-/** Apply sky & star field + force globe projection. */
-function applySky(map: maplibregl.Map) {
-  try {
-    if (typeof (map as any).setSky === 'function') {
-      (map as any).setSky({
-        'sky-color': '#0a0f1d',
-        'sky-horizon-blend': 0.5,
-        'horizon-color': '#1e3a5f',
-        'horizon-fog-blend': 0.6,
-        'fog-color': '#060912',
-        'fog-ground-blend': 0.35,
-        'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 7, 0],
-      });
-    }
-  } catch {
-    // older MapLibre — silent noop
   }
 }
 
@@ -526,8 +507,7 @@ export default function MapCanvas({
     map.on('load', () => {
       map.setProjection({ type: 'globe' });
 
-      maybeApplyAtmosphere(map);
-      applySky(map);
+      maybeApplyAtmosphere(map, isLightTheme(theme));
       registerPlantIcon(map);
 
       setTimeout(() => {
@@ -571,13 +551,14 @@ export default function MapCanvas({
     const currentBearing = map.getBearing();
 
     isStyleLoaded.current = false;
-    map.setStyle(activeTheme.style as any);
+    // diff:false guarantees a full reload so `style.load` always fires and the
+    // overlay layers get reinstalled (a successful diff skips that event).
+    map.setStyle(activeTheme.style as any, { diff: false });
 
     map.once('style.load', () => {
       map.setProjection({ type: 'globe' });
 
-      maybeApplyAtmosphere(map);
-      applySky(map);
+      maybeApplyAtmosphere(map, isLightTheme(theme));
       registerPlantIcon(map);
 
       setTimeout(() => {
