@@ -6,24 +6,7 @@ An interactive map of Africa's power infrastructure: power plants, transmission 
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    subgraph Sources["Public data sources"]
-        S1["WRI Global Power Plant Database"]
-        S2["World Bank Africa grid map 2017"]
-        S3["OpenStreetMap Overpass API"]
-        S4["TeleGeography submarine cables"]
-        S5["WRI Aqueduct 4.0"]
-        S6["Natural Earth"]
-    end
-
-    Sources --> P["scripts/prepare_data.py<br/>GeoPandas and pandas"]
-    P --> C[("cache/<br/>raw downloads")]
-    P --> D[("public/data/<br/>GeoJSON layers")]
-    D --> L["components/map/dataPrep.ts<br/>load, normalize fuels, flag renewables"]
-    L --> M["components/map/MapCanvas.tsx<br/>MapLibre GL layers"]
-    M --> U["Layer panel, legend,<br/>stats panel, search"]
-```
+![Architecture: public data sources feed prepare_data.py, which writes GeoJSON layers that the Next.js app loads and draws with MapLibre GL](docs/architecture.png)
 
 The project has two parts. A Python script downloads the public datasets, clips them to Africa and writes clean GeoJSON files. A Next.js app then loads those files in the browser and draws them with MapLibre GL.
 
