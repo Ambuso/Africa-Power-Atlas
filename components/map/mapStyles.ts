@@ -65,11 +65,30 @@ export const LAYER_IDS = {
 
 const EMPTY_FC: FeatureCollection = { type: 'FeatureCollection', features: [] };
 
+/* Resting opacities — also the end values of MapCanvas' fade-in animation.
+ * Borders are kept quiet so plants and grid lines carry the map. */
+export const ADMIN0_GLOW_OPACITY = 0.14;
+export const ADMIN0_LINE_OPACITY = 0.55;
+export const SUBMARINE_CABLE_OPACITY = 0.5;
+
+const DIAMOND_CAPACITY_SIZE = [
+  'interpolate', ['linear'],
+  ['coalesce', ['to-number', ['get', 'capacity_mw']], 50],
+  0, 0.25, 100, 0.4, 500, 0.6, 1000, 0.8, 5000, 1.15,
+];
+
+/** Scale a data-driven radius with zoom so markers don't swamp the continent view. */
+export function zoomScaled(expr: unknown): any {
+  return ['interpolate', ['linear'], ['zoom'], 2, ['*', 0.45, expr], 5, ['*', 0.8, expr], 9, ['*', 1.2, expr]];
+}
+
 /* ─────────── typography ─────────── */
 
-const FONT_BOLD = ['Noto Sans Bold', 'Open Sans Bold', 'Arial Unicode MS Bold'];
-const FONT_REGULAR = ['Noto Sans Regular', 'Open Sans Regular', 'Arial Unicode MS Regular'];
-const FONT_ITALIC = ['Noto Sans Italic', 'Open Sans Italic', 'Arial Unicode MS Regular'];
+// Single-font stacks: glyph servers (OpenFreeMap, MapTiler) serve one font
+// per request, and a combined stack 404s and silently drops every label.
+const FONT_BOLD = ['Noto Sans Bold'];
+const FONT_REGULAR = ['Noto Sans Regular'];
+const FONT_ITALIC = ['Noto Sans Italic'];
 
 /* ─────────── helpers ─────────── */
 
@@ -233,22 +252,10 @@ export function installMapDataLayers(map: MapLibreMap) {
       source: SOURCE_IDS.admin0,
       layout: { 'line-cap': 'round', 'line-join': 'round' },
       paint: {
-        'line-color': 'rgba(34,211,238,0.75)',
-        'line-width': [
-          'interpolate', ['linear'], ['zoom'],
-          1, 4,
-          3, 6,
-          6, 9,
-          9, 12,
-        ],
-        'line-opacity': [
-          'interpolate', ['linear'], ['zoom'],
-          1, 0.5,
-          3, 0.62,
-          6, 0.72,
-          9, 0.82,
-        ],
-        'line-blur': 4,
+        'line-color': '#22d3ee',
+        'line-width': ['interpolate', ['linear'], ['zoom'], 1, 2, 4, 3.5, 8, 6],
+        'line-opacity': ADMIN0_GLOW_OPACITY,
+        'line-blur': ['interpolate', ['linear'], ['zoom'], 1, 2, 8, 4],
       },
     },
     beforeLabels,
@@ -263,15 +270,9 @@ export function installMapDataLayers(map: MapLibreMap) {
       source: SOURCE_IDS.admin0,
       layout: { 'line-cap': 'round', 'line-join': 'round' },
       paint: {
-        'line-color': '#67e8f9',
-        'line-width': [
-          'interpolate', ['linear'], ['zoom'],
-          1, 1.6,
-          3, 2.2,
-          6, 3,
-          9, 4,
-        ],
-        'line-opacity': 1,
+        'line-color': '#7dd3fc',
+        'line-width': ['interpolate', ['linear'], ['zoom'], 1, 0.6, 4, 0.9, 8, 1.6],
+        'line-opacity': ADMIN0_LINE_OPACITY,
       },
     },
     beforeLabels,
@@ -287,9 +288,8 @@ export function installMapDataLayers(map: MapLibreMap) {
       layout: { 'line-cap': 'round', 'line-join': 'round' },
       paint: {
         'line-color': '#22d3ee',
-        'line-width': ['interpolate', ['linear'], ['zoom'], 2, 1, 6, 2.5, 10, 4],
-        'line-opacity': 0.82,
-        'line-blur': 0.4,
+        'line-width': ['interpolate', ['linear'], ['zoom'], 2, 0.7, 6, 1.6, 10, 2.8],
+        'line-opacity': SUBMARINE_CABLE_OPACITY,
         'line-dasharray': [3, 2],
       },
     },
@@ -586,10 +586,12 @@ export function installMapDataLayers(map: MapLibreMap) {
       filter: ['!', ['has', 'point_count']],
       layout: {
         'icon-image': 'plant-diamond',
+        // Capacity sets relative size; zoom keeps the continent view uncluttered.
         'icon-size': [
-          'interpolate', ['linear'],
-          ['coalesce', ['to-number', ['get', 'capacity_mw']], 50],
-          0, 0.25, 100, 0.4, 500, 0.6, 1000, 0.8, 5000, 1.15,
+          'interpolate', ['linear'], ['zoom'],
+          2, ['*', 0.32, DIAMOND_CAPACITY_SIZE],
+          5, ['*', 0.6, DIAMOND_CAPACITY_SIZE],
+          9, ['*', 1, DIAMOND_CAPACITY_SIZE],
         ],
         'icon-allow-overlap': true,
         'icon-ignore-placement': true,
@@ -870,22 +872,34 @@ export function setPlantsClustering(map: MapLibreMap, enabled: boolean) {
 
 /* ─────────── atmosphere + globe fix ─────────── */
 
-export function maybeApplyAtmosphere(map: MapLibreMap) {
+export function maybeApplyAtmosphere(map: MapLibreMap, light = false) {
   try {
     map.setProjection({ type: 'globe' } as any);
   } catch {}
 
   try {
     if (typeof (map as any).setSky === 'function') {
-      (map as any).setSky({
-        'sky-color': '#0a0f1d',
-        'sky-horizon-blend': 0.5,
-        'horizon-color': '#1e3a5f',
-        'horizon-fog-blend': 0.6,
-        'fog-color': '#060912',
-        'fog-ground-blend': 0.35,
-        'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 7, 0],
-      });
+      (map as any).setSky(
+        light
+          ? {
+              'sky-color': '#bcd7f0',
+              'sky-horizon-blend': 0.5,
+              'horizon-color': '#e2edf8',
+              'horizon-fog-blend': 0.6,
+              'fog-color': '#f1f5f9',
+              'fog-ground-blend': 0.3,
+              'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 7, 0],
+            }
+          : {
+              'sky-color': '#0a0f1d',
+              'sky-horizon-blend': 0.5,
+              'horizon-color': '#1e3a5f',
+              'horizon-fog-blend': 0.6,
+              'fog-color': '#060912',
+              'fog-ground-blend': 0.35,
+              'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 7, 0],
+            },
+      );
     }
   } catch {}
 }

@@ -31,7 +31,7 @@ import type {
   MapThemeKey,
   ViewMode,
 } from '@/lib/types';
-import { MAP_THEMES } from './mapThemes';
+import { MAP_THEMES, isLightTheme } from './mapThemes';
 import {
   SOURCE_IDS,
   LAYER_IDS,
@@ -39,6 +39,10 @@ import {
   updateSourceData,
   applyLayerVisibility,
   maybeApplyAtmosphere,
+  ADMIN0_GLOW_OPACITY,
+  ADMIN0_LINE_OPACITY,
+  SUBMARINE_CABLE_OPACITY,
+  zoomScaled,
 } from './mapStyles';
 import { fuelColors, colorForFuel } from './fuelColors';
 import { featureMatchesCountries } from '@/lib/countries';
@@ -75,25 +79,6 @@ function registerPlantIcon(map: maplibregl.Map) {
     map.addImage('plant-diamond', data as any, { sdf: true });
   } catch (e) {
     console.warn('[MapLibre] failed to register plant diamond icon', e);
-  }
-}
-
-/** Apply sky & star field + force globe projection. */
-function applySky(map: maplibregl.Map) {
-  try {
-    if (typeof (map as any).setSky === 'function') {
-      (map as any).setSky({
-        'sky-color': '#0a0f1d',
-        'sky-horizon-blend': 0.5,
-        'horizon-color': '#1e3a5f',
-        'horizon-fog-blend': 0.6,
-        'fog-color': '#060912',
-        'fog-ground-blend': 0.35,
-        'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 7, 0],
-      });
-    }
-  } catch {
-    // older MapLibre — silent noop
   }
 }
 
@@ -161,6 +146,8 @@ export default function MapCanvas({
   const interactionsInstalled = useRef(false);
   const hasLitUp = useRef(false);
   const pulseFrameRef = useRef<number | null>(null);
+  /** Clustering state of the plants source (installMapDataLayers creates it clustered). */
+  const plantsClusteredRef = useRef(true);
   const onMapReadyRef = useRef(onMapReady);
 
   useEffect(() => {
@@ -216,7 +203,7 @@ export default function MapCanvas({
   /* ─ paint expressions ─ */
   const radiusExpression = useMemo<ExpressionSpecification>(
     () =>
-      [
+      zoomScaled([
         'interpolate',
         ['linear'],
         ['coalesce', ['to-number', ['get', 'capacity_mw']], 50],
@@ -225,13 +212,13 @@ export default function MapCanvas({
         500, 8 * bubbleScale,
         1000, 11 * bubbleScale,
         5000, 16 * bubbleScale,
-      ] as ExpressionSpecification,
+      ]) as ExpressionSpecification,
     [bubbleScale],
   );
 
   const glowRadiusExpression = useMemo<ExpressionSpecification>(
     () =>
-      [
+      zoomScaled([
         'interpolate',
         ['linear'],
         ['coalesce', ['to-number', ['get', 'capacity_mw']], 50],
@@ -240,13 +227,13 @@ export default function MapCanvas({
         500, 19 * bubbleScale,
         1000, 27 * bubbleScale,
         5000, 42 * bubbleScale,
-      ] as ExpressionSpecification,
+      ]) as ExpressionSpecification,
     [bubbleScale],
   );
 
   const pulseRadiusExpression = useMemo<ExpressionSpecification>(
     () =>
-      [
+      zoomScaled([
         'interpolate',
         ['linear'],
         ['coalesce', ['to-number', ['get', 'capacity_mw']], 50],
@@ -255,7 +242,7 @@ export default function MapCanvas({
         500, 32 * bubbleScale,
         1000, 46 * bubbleScale,
         5000, 70 * bubbleScale,
-      ] as ExpressionSpecification,
+      ]) as ExpressionSpecification,
     [bubbleScale],
   );
 
@@ -319,10 +306,10 @@ export default function MapCanvas({
         const t = raw < 0 ? 0 : raw > 1 ? 1 : raw;
         const e = EASE(t);
 
-        setOpacity(map, LAYER_IDS.admin0Glow, 'line-opacity', 0.72 * e);
-        setOpacity(map, LAYER_IDS.admin0, 'line-opacity', e);
+        setOpacity(map, LAYER_IDS.admin0Glow, 'line-opacity', ADMIN0_GLOW_OPACITY * e);
+        setOpacity(map, LAYER_IDS.admin0, 'line-opacity', ADMIN0_LINE_OPACITY * e);
         setOpacity(map, LAYER_IDS.transmission, 'line-opacity', 0.88 * e);
-        setOpacity(map, LAYER_IDS.submarineCables, 'line-opacity', 0.82 * e);
+        setOpacity(map, LAYER_IDS.submarineCables, 'line-opacity', SUBMARINE_CABLE_OPACITY * e);
         setOpacity(map, LAYER_IDS.plants, 'circle-opacity', e);
         setOpacity(map, LAYER_IDS.plantsGlow, 'circle-opacity', 0.32 * e);
         setOpacity(map, LAYER_IDS.plantsPulse, 'circle-opacity', 0.10 * e);
@@ -377,6 +364,17 @@ export default function MapCanvas({
     updateSourceData(map, SOURCE_IDS.admin1, d?.admin1 ?? null);
     updateSourceData(map, SOURCE_IDS.admin2, d?.admin2 ?? null);
     updateSourceData(map, SOURCE_IDS.placeLabels, d?.placeLabels ?? null);
+  }, []);
+
+  /** The plants source is created clustered; only Cluster mode should group
+   *  points, otherwise Points mode hides most plants below zoom 5. */
+  const syncPlantClustering = useCallback((map: maplibregl.Map) => {
+    const src = map.getSource(SOURCE_IDS.plants) as maplibregl.GeoJSONSource | undefined;
+    if (!src) return;
+    const want = viewModeRef.current === 'cluster';
+    if (plantsClusteredRef.current === want) return;
+    src.setClusterOptions({ cluster: want });
+    plantsClusteredRef.current = want;
   }, []);
 
   const installInteractions = useCallback((map: maplibregl.Map) => {
@@ -514,7 +512,14 @@ export default function MapCanvas({
     });
 
     map.on('error', (e) => {
-      console.error('[MapLibre]', e?.error?.message ?? e);
+      const message = e?.error?.message ?? String(e);
+      // A failed tile/style fetch (offline, blocked host) is recoverable —
+      // warn instead of error so it doesn't trip the Next.js error overlay.
+      if (/AJAXError|Failed to fetch/i.test(message)) {
+        console.warn('[MapLibre]', message);
+      } else {
+        console.error('[MapLibre]', message);
+      }
     });
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'bottom-left');
@@ -526,8 +531,7 @@ export default function MapCanvas({
     map.on('load', () => {
       map.setProjection({ type: 'globe' });
 
-      maybeApplyAtmosphere(map);
-      applySky(map);
+      maybeApplyAtmosphere(map, isLightTheme(theme));
       registerPlantIcon(map);
 
       setTimeout(() => {
@@ -535,6 +539,7 @@ export default function MapCanvas({
         isStyleLoaded.current = true;
         pushAllData(map);
         applyPlantPaint(map);
+        syncPlantClustering(map);
         applyLayerVisibility(map, visibleLayersRef.current, viewModeRef.current);
         installInteractions(map);
 
@@ -571,13 +576,16 @@ export default function MapCanvas({
     const currentBearing = map.getBearing();
 
     isStyleLoaded.current = false;
-    map.setStyle(activeTheme.style as any);
+    // diff:false guarantees a full reload so `style.load` always fires and the
+    // overlay layers get reinstalled (a successful diff skips that event).
+    map.setStyle(activeTheme.style as any, { diff: false });
 
     map.once('style.load', () => {
+      // The new style recreates the plants source clustered.
+      plantsClusteredRef.current = true;
       map.setProjection({ type: 'globe' });
 
-      maybeApplyAtmosphere(map);
-      applySky(map);
+      maybeApplyAtmosphere(map, isLightTheme(theme));
       registerPlantIcon(map);
 
       setTimeout(() => {
@@ -585,6 +593,7 @@ export default function MapCanvas({
         isStyleLoaded.current = true;
         pushAllData(map);
         applyPlantPaint(map);
+        syncPlantClustering(map);
         applyLayerVisibility(map, visibleLayersRef.current, viewModeRef.current);
         installInteractions(map);
 
@@ -596,7 +605,7 @@ export default function MapCanvas({
         });
       }, 60);
     });
-  }, [theme, pushAllData, applyPlantPaint, installInteractions]);
+  }, [theme, pushAllData, applyPlantPaint, syncPlantClustering, installInteractions]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -644,8 +653,9 @@ export default function MapCanvas({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !isStyleLoaded.current) return;
+    syncPlantClustering(map);
     applyLayerVisibility(map, visibleLayers, viewMode);
-  }, [visibleLayers, viewMode]);
+  }, [visibleLayers, viewMode, syncPlantClustering]);
 
   const isDataCenter = popup?.kind === 'datacenter';
   const accentColor = isDataCenter

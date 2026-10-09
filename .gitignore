@@ -19,3 +19,7 @@ cache/
 *.csv
 .env*.local
 .env
+
+# self-hosted basemap layers (built by scripts/build_basemap.py) are committed
+!public/basemap/
+!public/basemap/*.geojson

@@ -55,15 +55,11 @@ python scripts/prepare_data.py --only plants,transmission   # run selected steps
 python scripts/prepare_data.py --force                      # ignore the cache and download again
 ```
 
-### Optional basemap keys
+### Basemaps
 
-The map works without any API key and falls back to free CARTO basemaps. For richer Light and Streets themes, add one of these to `.env.local`:
+The map works without any API key. The default Dark and Minimal basemaps are built from Natural Earth layers committed in `public/basemap/` (rebuild with `python scripts/build_basemap.py`), with terrain shading from AWS Terrain Tiles. Light and Streets use free OpenFreeMap styles; Hybrid and Satellite use Esri World Imagery.
 
-```
-NEXT_PUBLIC_MAPTILER_KEY=
-NEXT_PUBLIC_STADIA_KEY=
-NEXT_PUBLIC_GEOAPIFY_KEY=
-```
+Optional: add `NEXT_PUBLIC_MAPTILER_KEY=` to `.env.local` to use MapTiler for Light and Streets instead.
 
 ## Project structure
 
