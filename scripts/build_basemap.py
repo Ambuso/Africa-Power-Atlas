@@ -13,6 +13,7 @@ import zipfile
 from pathlib import Path
 
 import geopandas as gpd
+import pandas as pd
 import requests
 from shapely.geometry import box, mapping
 
@@ -78,20 +79,24 @@ def main():
     africa_land = load("10m_physical/ne_10m_land").clip(AFRICA_BBOX)
     write(africa_land.explode(index_parts=False), "land_africa.geojson", [], 0.004, nd=4)
 
-    # Countries outside Africa → dimmed so the continent is the focal point.
-    countries = load("50m_cultural/ne_50m_admin_0_countries")
-    rest = countries[countries["CONTINENT"] != "Africa"]
-    write(rest, "rest_of_world.geojson", [], 0.03)
-
     borders = load("50m_cultural/ne_50m_admin_0_boundary_lines_land")
     write(borders, "borders.geojson", [], 0.02)
 
-    lakes = load("10m_physical/ne_10m_lakes").clip(AFRICA_BBOX)
-    lakes = lakes[lakes["scalerank"] <= 6]
+    # Lakes & rivers worldwide: 50m detail everywhere, sharper 10m inside Africa.
+    def outside_africa(gdf):
+        return gdf[~gdf.geometry.representative_point().within(AFRICA_BBOX)]
+
+    lakes = pd.concat([
+        outside_africa(load("50m_physical/ne_50m_lakes")),
+        load("10m_physical/ne_10m_lakes").clip(AFRICA_BBOX).query("scalerank <= 6"),
+    ])
     write(lakes, "lakes.geojson", ["name", "scalerank"], 0.004, nd=4)
 
-    rivers = load("10m_physical/ne_10m_rivers_lake_centerlines").clip(AFRICA_BBOX)
-    rivers = rivers[(rivers["scalerank"] <= 7) & (rivers["featurecla"] != "Lake Centerline")]
+    rivers = pd.concat([
+        outside_africa(load("50m_physical/ne_50m_rivers_lake_centerlines")),
+        load("10m_physical/ne_10m_rivers_lake_centerlines").clip(AFRICA_BBOX).query("scalerank <= 7"),
+    ])
+    rivers = rivers[rivers["featurecla"] != "Lake Centerline"]
     write(rivers, "rivers.geojson", ["name", "scalerank"], 0.004, nd=4)
 
     # Ocean / sea names as label points.
