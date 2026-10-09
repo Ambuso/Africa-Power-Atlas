@@ -67,19 +67,20 @@ npm run dev
 
 ## Map themes configuration
 
-All basemap themes live in `components/map/mapThemes.ts`. They need no API key:
+All basemap themes live in `components/map/mapThemes.ts`. None need an API key:
 
 | Theme | Source |
 | --- | --- |
-| Dark (default) | Vector tiles from [OpenFreeMap](https://openfreemap.org) + shaded relief from AWS Terrain Tiles |
+| Dark (default) | Self-hosted Natural Earth layers in `public/basemap/` + shaded relief (AWS Terrain Tiles); OpenFreeMap roads/towns fade in when zoomed |
 | Light / Streets | OpenFreeMap hosted `positron` / `liberty` styles |
 | Hybrid | Esri World Imagery + vector borders, roads and labels |
 | Satellite | Esri World Imagery |
-| Minimal | Land / water silhouette only |
+| Minimal | Flat land / water from the self-hosted layers |
+
+The self-hosted layers are committed, so the Dark and Minimal maps always render.
+Rebuild them with `python scripts/build_basemap.py`.
 
 Optional: set `NEXT_PUBLIC_MAPTILER_KEY` in `.env.local` to use MapTiler for Light / Streets instead.
-
-Overlay labels use single-font Noto Sans stacks, so they render with any of these glyph servers.
 
 ## Renewable filters
 

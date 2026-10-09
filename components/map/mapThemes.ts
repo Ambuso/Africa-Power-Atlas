@@ -1,10 +1,11 @@
 /* ==================== components/map/mapThemes.ts ====================
  * Globe-safe basemap registry.
  *
- * The default "Dark" theme is a crisp VECTOR basemap (OpenFreeMap /
- * OpenMapTiles schema — free, no API key) with shaded relief from the
- * open AWS Terrain Tiles DEM. It replaces the old dimmed raster, which
- * looked blurry on the globe and went blank without a Geoapify key.
+ * "Dark" (default) is built from SELF-HOSTED Natural Earth layers in
+ * public/basemap/ (see scripts/build_basemap.py) plus shaded relief from
+ * the open AWS Terrain Tiles DEM, so its core look never depends on a
+ * third-party tile server or API key. Road / town detail from OpenFreeMap
+ * fades in once you zoom into a country.
  *
  * Every inline style shares one glyph server so the app's own overlay
  * labels (Noto Sans, see mapStyles.ts) always render.
@@ -25,21 +26,28 @@ const GLYPHS_URL = 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf'
 
 const DARK = {
   space: '#020617',
-  ocean: '#071226',
-  land: '#0f1a2e',
-  landcoverGrass: '#112036',
-  landcoverWood: '#0f2236',
-  landcoverSand: '#18223a',
+  ocean: '#040b1a',
+  land: '#101b30',
+  landAfrica: '#15233d',
+  restOfWorldDim: 'rgba(2, 6, 23, 0.6)',
+  coast: 'rgba(125, 211, 252, 0.35)',
+  coastGlow: 'rgba(56, 189, 248, 0.18)',
+  lake: '#06142b',
+  river: 'rgba(56, 130, 200, 0.45)',
+  border: 'rgba(148, 163, 184, 0.22)',
+  landcoverGrass: '#132440',
+  landcoverWood: '#12263f',
+  landcoverSand: '#1a2640',
   landcoverIce: '#1e2a44',
-  urban: '#16233d',
-  water: '#071226',
+  urban: '#1c2b48',
+  water: '#06142b',
   waterway: '#0d2445',
-  boundary: 'rgba(148, 163, 184, 0.38)',
-  boundarySub: 'rgba(148, 163, 184, 0.16)',
-  road: 'rgba(100, 116, 139, 0.34)',
-  roadMajor: 'rgba(148, 163, 184, 0.42)',
+  boundary: 'rgba(148, 163, 184, 0.3)',
+  boundarySub: 'rgba(148, 163, 184, 0.14)',
+  road: 'rgba(100, 116, 139, 0.3)',
+  roadMajor: 'rgba(148, 163, 184, 0.38)',
   label: 'rgba(148, 163, 184, 0.75)',
-  labelWater: 'rgba(56, 120, 190, 0.7)',
+  labelWater: 'rgba(96, 150, 210, 0.6)',
   halo: 'rgba(2, 6, 23, 0.9)',
 };
 
@@ -69,6 +77,17 @@ const ESRI_SATELLITE_SOURCE: SourceSpecification = {
   maxzoom: 19,
   attribution: 'Imagery © Esri, Maxar, Earthstar Geographics',
 };
+
+/** Self-hosted Natural Earth layer from public/basemap/. */
+function localSource(name: string): SourceSpecification {
+  return {
+    type: 'geojson',
+    data: `/basemap/${name}.geojson`,
+    maxzoom: 8,
+    tolerance: 0.5,
+    attribution: '<a href="https://www.naturalearthdata.com/">Natural Earth</a>',
+  } as SourceSpecification;
+}
 
 /* ─────────── globe helper ─────────── */
 
@@ -146,30 +165,6 @@ function hillshadeLayer(
       'hillshade-illumination-direction': 315,
     },
   };
-}
-
-function waterLayers(water: string, waterway: string): LayerSpecification[] {
-  return [
-    {
-      id: 'water',
-      type: 'fill',
-      source: OMT,
-      'source-layer': 'water',
-      paint: { 'fill-color': water },
-    },
-    {
-      id: 'waterway',
-      type: 'line',
-      source: OMT,
-      'source-layer': 'waterway',
-      minzoom: 4,
-      filter: ['in', ['get', 'class'], ['literal', ['river', 'canal']]],
-      paint: {
-        'line-color': waterway,
-        'line-width': ['interpolate', ['exponential', 1.4], ['zoom'], 4, 0.4, 10, 2, 14, 5],
-      },
-    },
-  ];
 }
 
 function roadLayers(minor: string, major: string): LayerSpecification[] {
@@ -272,32 +267,140 @@ function basemapLabelLayers(text: string, water: string, halo: string): LayerSpe
 
 /* ─────────── inline styles ─────────── */
 
-/** DEFAULT — dark vector basemap + relief. Calm enough that the cyan
- *  Africa outline and glowing plants stay the focal point. */
-const DARK_STYLE: StyleSpecification = globeStyle({
-  version: 8,
-  name: 'Africa Power Atlas — Dark',
-  glyphs: GLYPHS_URL,
-  sources: { [OMT]: OPENFREEMAP_SOURCE, dem: DEM_SOURCE },
-  layers: [
-    { id: 'background', type: 'background', paint: { 'background-color': DARK.land } },
-    ...landLayers(DARK),
-    hillshadeLayer('rgba(0, 0, 0, 0.55)', 'rgba(120, 160, 220, 0.10)', 0.5),
-    ...waterLayers(DARK.water, DARK.waterway),
+/** Self-hosted base: ocean, land (Africa brighter, rest of world dimmed),
+ *  relief, coast glow, lakes, rivers, borders and sea names. */
+function naturalEarthBase(withRelief: boolean): {
+  sources: Record<string, SourceSpecification>;
+  layers: LayerSpecification[];
+} {
+  const sources: Record<string, SourceSpecification> = {
+    'ne-ocean': localSource('ocean'),
+    'ne-land': localSource('land'),
+    'ne-land-africa': localSource('land_africa'),
+    'ne-rest': localSource('rest_of_world'),
+    'ne-borders': localSource('borders'),
+    'ne-lakes': localSource('lakes'),
+    'ne-rivers': localSource('rivers'),
+    'ne-marine': localSource('marine_labels'),
+  };
+  if (withRelief) sources.dem = DEM_SOURCE;
+
+  const layers: LayerSpecification[] = [
+    { id: 'background', type: 'background', paint: { 'background-color': DARK.ocean } },
+    { id: 'ne-land', type: 'fill', source: 'ne-land', paint: { 'fill-color': DARK.land, 'fill-antialias': false } },
+    {
+      id: 'ne-land-africa',
+      type: 'fill',
+      source: 'ne-land-africa',
+      paint: { 'fill-color': DARK.landAfrica, 'fill-antialias': false },
+    },
+    ...(withRelief
+      ? [hillshadeLayer('rgba(0, 2, 10, 0.85)', 'rgba(160, 200, 245, 0.22)', 0.75)]
+      : []),
+    // Re-cover the sea so DEM bathymetry doesn't shade the ocean.
+    { id: 'ne-ocean', type: 'fill', source: 'ne-ocean', paint: { 'fill-color': DARK.ocean, 'fill-antialias': false } },
+    { id: 'ne-rest-dim', type: 'fill', source: 'ne-rest', paint: { 'fill-color': DARK.restOfWorldDim } },
+    { id: 'ne-lakes', type: 'fill', source: 'ne-lakes', paint: { 'fill-color': DARK.lake } },
+    {
+      id: 'ne-rivers',
+      type: 'line',
+      source: 'ne-rivers',
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': DARK.river,
+        'line-width': [
+          'interpolate', ['linear'], ['zoom'],
+          2, ['interpolate', ['linear'], ['get', 'scalerank'], 0, 1.1, 7, 0.3],
+          7, ['interpolate', ['linear'], ['get', 'scalerank'], 0, 3, 7, 1],
+        ],
+      },
+    },
+    {
+      id: 'ne-coast-glow',
+      type: 'line',
+      source: 'ne-land-africa',
+      paint: {
+        'line-color': DARK.coastGlow,
+        'line-width': ['interpolate', ['linear'], ['zoom'], 1, 3, 6, 8],
+        'line-blur': ['interpolate', ['linear'], ['zoom'], 1, 3, 6, 6],
+      },
+    },
+    {
+      id: 'ne-coast',
+      type: 'line',
+      source: 'ne-land-africa',
+      paint: { 'line-color': DARK.coast, 'line-width': ['interpolate', ['linear'], ['zoom'], 1, 0.5, 6, 1.2] },
+    },
+    {
+      id: 'ne-borders',
+      type: 'line',
+      source: 'ne-borders',
+      paint: { 'line-color': DARK.border, 'line-width': ['interpolate', ['linear'], ['zoom'], 1, 0.4, 6, 1] },
+    },
+    {
+      id: 'ne-marine-label',
+      type: 'symbol',
+      source: 'ne-marine',
+      filter: ['<=', ['get', 'scalerank'], ['step', ['zoom'], 1, 3, 2, 4, 3]],
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-font': ['Noto Sans Italic'],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 1, 10, 5, 13],
+        'text-letter-spacing': 0.25,
+        'text-max-width': 7,
+      },
+      paint: { 'text-color': DARK.labelWater, 'text-halo-color': DARK.halo, 'text-halo-width': 1 },
+    },
+  ];
+  return { sources, layers };
+}
+
+/** Street-level detail from OpenFreeMap, faded in from z5 on top of the
+ *  self-hosted base (if that server is unreachable the base still works). */
+function zoomedDetailLayers(): LayerSpecification[] {
+  return [
+    ...landLayers(DARK).map((l) => ({ ...l, minzoom: 6 }) as LayerSpecification),
     ...roadLayers(DARK.road, DARK.roadMajor),
-    ...boundaryLayers(DARK.boundary, DARK.boundarySub),
-    ...basemapLabelLayers(DARK.label, DARK.labelWater, DARK.halo),
-  ],
-});
+    ...basemapLabelLayers(DARK.label, DARK.labelWater, DARK.halo).filter((l) => l.id === 'label-town'),
+  ];
+}
+
+/** DEFAULT — calm dark cartography with relief; the data is the focal point. */
+const DARK_STYLE: StyleSpecification = (() => {
+  const base = naturalEarthBase(true);
+  // Detail layers sit under the coast/border/label layers of the base.
+  const insertAt = base.layers.findIndex((l) => l.id === 'ne-coast-glow');
+  return globeStyle({
+    version: 8,
+    name: 'Africa Power Atlas — Dark',
+    glyphs: GLYPHS_URL,
+    sources: { ...base.sources, [OMT]: OPENFREEMAP_SOURCE },
+    layers: [
+      ...base.layers.slice(0, insertAt),
+      ...zoomedDetailLayers(),
+      ...base.layers.slice(insertAt),
+    ],
+  });
+})();
+
+/** Local land / ocean under the imagery, shown while tiles load or if the
+ *  imagery server is unreachable — the globe never goes black. */
+const IMAGERY_UNDERLAY = (() => {
+  const base = naturalEarthBase(false);
+  return {
+    sources: { 'ne-land': localSource('land') },
+    layers: base.layers.filter((l) => l.id === 'background' || l.id === 'ne-land'),
+  };
+})();
 
 /** Satellite imagery with thin vector borders + roads on top. */
 const HYBRID_STYLE: StyleSpecification = globeStyle({
   version: 8,
   name: 'Africa Power Atlas — Hybrid',
   glyphs: GLYPHS_URL,
-  sources: { esri: ESRI_SATELLITE_SOURCE, [OMT]: OPENFREEMAP_SOURCE },
+  sources: { ...IMAGERY_UNDERLAY.sources, esri: ESRI_SATELLITE_SOURCE, [OMT]: OPENFREEMAP_SOURCE },
   layers: [
-    { id: 'background', type: 'background', paint: { 'background-color': DARK.space } },
+    ...IMAGERY_UNDERLAY.layers,
     {
       id: 'satellite',
       type: 'raster',
@@ -320,9 +423,9 @@ const SATELLITE_STYLE: StyleSpecification = globeStyle({
   version: 8,
   name: 'Africa Power Atlas — Satellite',
   glyphs: GLYPHS_URL,
-  sources: { esri: ESRI_SATELLITE_SOURCE },
+  sources: { ...IMAGERY_UNDERLAY.sources, esri: ESRI_SATELLITE_SOURCE },
   layers: [
-    { id: 'background', type: 'background', paint: { 'background-color': DARK.space } },
+    ...IMAGERY_UNDERLAY.layers,
     {
       id: 'satellite',
       type: 'raster',
@@ -332,23 +435,17 @@ const SATELLITE_STYLE: StyleSpecification = globeStyle({
   ],
 });
 
-/** Land / water silhouette only — maximum focus on the data. */
-const MINIMAL_STYLE: StyleSpecification = globeStyle({
-  version: 8,
-  name: 'Africa Power Atlas — Minimal',
-  glyphs: GLYPHS_URL,
-  sources: { [OMT]: OPENFREEMAP_SOURCE },
-  layers: [
-    { id: 'background', type: 'background', paint: { 'background-color': '#0b1222' } },
-    {
-      id: 'water',
-      type: 'fill',
-      source: OMT,
-      'source-layer': 'water',
-      paint: { 'fill-color': '#040816' },
-    },
-  ],
-});
+/** Flat land / water silhouette, no relief or detail — maximum focus on data. */
+const MINIMAL_STYLE: StyleSpecification = (() => {
+  const base = naturalEarthBase(false);
+  return globeStyle({
+    version: 8,
+    name: 'Africa Power Atlas — Minimal',
+    glyphs: GLYPHS_URL,
+    sources: base.sources,
+    layers: base.layers.filter((l) => !['ne-rivers', 'ne-marine-label'].includes(l.id)),
+  });
+})();
 
 /* ─────────── hosted vector styles ─────────── */
 
@@ -386,12 +483,12 @@ export const MAP_THEMES: Record<MapThemeKey, MapThemeEntry> = {
 };
 
 export const MAP_THEME_META: Record<MapThemeKey, MapThemeMetaEntry> = {
-  dark: { label: 'Dark', description: 'Vector + terrain relief', accent: '#22d3ee' },
+  dark: { label: 'Dark', description: 'Relief, Africa in focus', accent: '#22d3ee' },
   light: { label: 'Light', description: 'Cartographic', accent: '#0ea5e9' },
   streets: { label: 'Streets', description: 'Roads & detail', accent: '#f59e0b' },
   hybrid: { label: 'Hybrid', description: 'Imagery + borders', accent: '#10b981' },
   satellite: { label: 'Satellite', description: 'Imagery only', accent: '#eab308' },
-  minimal: { label: 'Minimal', description: 'Land & water only', accent: '#a78bfa' },
+  minimal: { label: 'Minimal', description: 'Flat land & water', accent: '#a78bfa' },
 };
 
 /** Themes with a light background need a light sky/halo treatment. */
