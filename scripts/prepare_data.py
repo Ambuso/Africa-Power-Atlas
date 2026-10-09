@@ -942,6 +942,39 @@ def prepare_planned_upgrades(force: bool = False) -> int:
         write_empty(out); return 0
 
 
+# ====================== COMPACT OUTPUT ======================
+# Outputs are committed to git, so keep them small: round coordinates to
+# 4 decimals (~11 m), minify, and drop transmission fields the app derives
+# itself (dataPrep.ts recomputes voltage_class/color from voltage_kv).
+TRANSMISSION_KEEP = ("voltage_kv", "status")
+
+
+def _round_coords(obj, nd=4):
+    if isinstance(obj, float):
+        return round(obj, nd)
+    if isinstance(obj, list):
+        return [_round_coords(o, nd) for o in obj]
+    return obj
+
+
+def compact_outputs() -> None:
+    for path in sorted(PUBLIC_DATA_DIR.glob("*/*.geojson")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        data.pop("crs", None)
+        for feat in data.get("features", []):
+            geom = feat.get("geometry")
+            if geom and "coordinates" in geom:
+                geom["coordinates"] = _round_coords(geom["coordinates"])
+            if path.name == "africa_transmission.geojson":
+                props = feat.get("properties") or {}
+                feat["properties"] = {k: props.get(k) for k in TRANSMISSION_KEEP}
+        path.write_text(json.dumps(data, separators=(",", ":"), ensure_ascii=False),
+                        encoding="utf-8")
+
+
 # ====================== MAIN ======================
 def main():
     parser = argparse.ArgumentParser(
@@ -984,6 +1017,8 @@ def main():
         except Exception as e:
             print(f"[{name}] unhandled: {type(e).__name__}: {e}")
             results[name] = 0
+
+    compact_outputs()
 
     print("\n" + "=" * 52)
     print("SUMMARY")
