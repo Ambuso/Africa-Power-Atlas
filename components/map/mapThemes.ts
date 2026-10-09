@@ -27,9 +27,7 @@ const GLYPHS_URL = 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf'
 const DARK = {
   space: '#020617',
   ocean: '#040b1a',
-  land: '#101b30',
-  landAfrica: '#15233d',
-  restOfWorldDim: 'rgba(2, 6, 23, 0.6)',
+  land: '#15233d',
   coast: 'rgba(125, 211, 252, 0.35)',
   coastGlow: 'rgba(56, 189, 248, 0.18)',
   lake: '#06142b',
@@ -267,8 +265,8 @@ function basemapLabelLayers(text: string, water: string, halo: string): LayerSpe
 
 /* ─────────── inline styles ─────────── */
 
-/** Self-hosted base: ocean, land (Africa brighter, rest of world dimmed),
- *  relief, coast glow, lakes, rivers, borders and sea names. */
+/** Self-hosted base: ocean, land (whole world equally lit; Africa drawn at
+ *  higher detail), relief, coast glow, lakes, rivers, borders and sea names. */
 function naturalEarthBase(withRelief: boolean): {
   sources: Record<string, SourceSpecification>;
   layers: LayerSpecification[];
@@ -277,7 +275,6 @@ function naturalEarthBase(withRelief: boolean): {
     'ne-ocean': localSource('ocean'),
     'ne-land': localSource('land'),
     'ne-land-africa': localSource('land_africa'),
-    'ne-rest': localSource('rest_of_world'),
     'ne-borders': localSource('borders'),
     'ne-lakes': localSource('lakes'),
     'ne-rivers': localSource('rivers'),
@@ -292,14 +289,13 @@ function naturalEarthBase(withRelief: boolean): {
       id: 'ne-land-africa',
       type: 'fill',
       source: 'ne-land-africa',
-      paint: { 'fill-color': DARK.landAfrica, 'fill-antialias': false },
+      paint: { 'fill-color': DARK.land, 'fill-antialias': false },
     },
     ...(withRelief
       ? [hillshadeLayer('rgba(0, 2, 10, 0.85)', 'rgba(160, 200, 245, 0.22)', 0.75)]
       : []),
     // Re-cover the sea so DEM bathymetry doesn't shade the ocean.
     { id: 'ne-ocean', type: 'fill', source: 'ne-ocean', paint: { 'fill-color': DARK.ocean, 'fill-antialias': false } },
-    { id: 'ne-rest-dim', type: 'fill', source: 'ne-rest', paint: { 'fill-color': DARK.restOfWorldDim } },
     { id: 'ne-lakes', type: 'fill', source: 'ne-lakes', paint: { 'fill-color': DARK.lake } },
     {
       id: 'ne-rivers',
@@ -318,7 +314,7 @@ function naturalEarthBase(withRelief: boolean): {
     {
       id: 'ne-coast-glow',
       type: 'line',
-      source: 'ne-land-africa',
+      source: 'ne-land',
       paint: {
         'line-color': DARK.coastGlow,
         'line-width': ['interpolate', ['linear'], ['zoom'], 1, 3, 6, 8],
@@ -328,8 +324,20 @@ function naturalEarthBase(withRelief: boolean): {
     {
       id: 'ne-coast',
       type: 'line',
-      source: 'ne-land-africa',
+      source: 'ne-land',
       paint: { 'line-color': DARK.coast, 'line-width': ['interpolate', ['linear'], ['zoom'], 1, 0.5, 6, 1.2] },
+    },
+    // Africa's 10m coastline takes over from the 50m world line when zoomed in.
+    {
+      id: 'ne-coast-africa',
+      type: 'line',
+      source: 'ne-land-africa',
+      minzoom: 4,
+      paint: {
+        'line-color': DARK.coast,
+        'line-width': 1.2,
+        'line-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0, 5, 1],
+      },
     },
     {
       id: 'ne-borders',
@@ -483,7 +491,7 @@ export const MAP_THEMES: Record<MapThemeKey, MapThemeEntry> = {
 };
 
 export const MAP_THEME_META: Record<MapThemeKey, MapThemeMetaEntry> = {
-  dark: { label: 'Dark', description: 'Relief, Africa in focus', accent: '#22d3ee' },
+  dark: { label: 'Dark', description: 'Terrain relief, whole world', accent: '#22d3ee' },
   light: { label: 'Light', description: 'Cartographic', accent: '#0ea5e9' },
   streets: { label: 'Streets', description: 'Roads & detail', accent: '#f59e0b' },
   hybrid: { label: 'Hybrid', description: 'Imagery + borders', accent: '#10b981' },
