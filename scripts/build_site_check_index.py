@@ -57,9 +57,15 @@ def main():
         if data.get('type') != 'FeatureCollection' or not isinstance(data.get('features'), list): raise ValueError(relative + ': invalid FeatureCollection')
         return data['features']
     countries = read('admin/africa_admin0.geojson'); water = read('context/africa_water_stress.geojson'); places = read('admin/africa_places.geojson')
-    telecom = json.loads((base / 'site-check/telecom-manifest.json').read_text()); layers = {}
+    telecom_path = base / 'site-check/telecom-manifest.json'
+    telecom = json.loads(telecom_path.read_text()) if telecom_path.exists() else None
+    layers = {}
     for key, (relative, name, release, url, note) in LAYERS.items():
-        features = read(relative); assets = []; omitted = 0
+        available = (base / relative).exists()
+        if not available and key not in {'landingStations', 'fibreRoutes'}: raise FileNotFoundError(relative)
+        features = read(relative) if available else []
+        if not available: digest.update(('unavailable:' + relative).encode())
+        assets = []; omitted = 0
         for index, feature in enumerate(features):
             geometry = feature.get('geometry'); p = feature.get('properties') or {}
             if not geometry or geometry['type'] not in {'Point', 'LineString', 'MultiLineString'}: omitted += 1; continue
@@ -69,7 +75,7 @@ def main():
             voltage_unit = 'V' if key == 'substations' else 'kV' if key == 'transmission' and p.get('status') else 'unknown'
             accuracy = p.get('accuracy') or ('Curated coordinate; may be approximate' if key == 'dataCentres' else 'Published source geometry; accuracy not recorded')
             assets.append({'id': str(p.get('id') or feature.get('id') or f'{key}:{index}'), 'name': str(p.get('name') or 'Unnamed mapped record'), 'geometry': geometry, 'sphere': sphere, 'country': str(p.get('country_long') or p.get('country') or 'Not reported'), 'fuel': str(p.get('primary_fuel') or p.get('fuel') or p.get('technology') or ''), 'capacityMW': numeric(p.get('capacity_mw')), 'voltageRaw': '' if raw_voltage is None else str(raw_voltage), 'voltageUnit': voltage_unit, 'status': str(p.get('status') or 'Not reported / not independently verified'), 'accuracy': accuracy, 'sourceUrl': p.get('source_url') or url})
-        layers[key] = {'source': {'name': name, 'release': release or 'OSM extraction ' + telecom['extracted_at'][:10], 'url': url, 'count': len(assets), 'omitted': omitted, 'note': note}, 'assets': assets}
+        layers[key] = {'source': {'name': name, 'release': release or ('OSM extraction ' + telecom['extracted_at'][:10] if telecom and available else 'Source snapshot unavailable'), 'url': url, 'count': len(assets), 'omitted': omitted, 'note': note if available else 'No source snapshot has been acquired yet. This is a coverage gap, not evidence that infrastructure is absent.'}, 'assets': assets}
         print(key, len(assets), 'indexed records;', omitted, 'omitted')
     output = ROOT / '.generated/site-check'; output.mkdir(parents=True, exist_ok=True)
     (output / 'index.json').write_text(json.dumps({'version': digest.hexdigest(), 'preparedAt': prepared, 'layers': layers, 'countries': countries, 'water': water}, ensure_ascii=False, separators=(',', ':')))
