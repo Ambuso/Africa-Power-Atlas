@@ -1,0 +1,26 @@
+name: Site Check telecom preparation
+on:
+  push:
+    branches: [feat/site-check]
+    paths:
+      - scripts/prepare_site_check_telecom.py
+      - .github/workflows/site-check-data.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/prepare_site_check_telecom.py
+      - name: Commit source snapshots
+        run: |
+          git add public/data/site-check
+          if git diff --cached --quiet; then exit 0; fi
+          git -c user.name="MapKwetu data preparation" -c user.email="145032237+Ambuso@users.noreply.github.com" commit -m "Add attributable OSM cable station and fibre snapshots"
+          git push origin HEAD:"$GITHUB_REF_NAME"
