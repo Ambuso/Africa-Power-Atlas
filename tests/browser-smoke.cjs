@@ -54,9 +54,12 @@ async function main() {
     await page.waitForFunction(() => document.querySelectorAll('.kw-scenario-copy output')[1]?.textContent === '100%');
     assert.ok((await page.locator('.kw-scenario-number strong').innerText()).startsWith('0'));
     await page.screenshot({ path: 'artifacts/browser/workspace-desktop.png', fullPage: true });
+    const atlasRequests = [];
+    page.on('request', (request) => atlasRequests.push(request.url()));
     const dataResponse = page.waitForResponse((response) => response.url().includes('/data/transition/hydrogen.geojson') && response.status() === 200);
     await page.goto('http://127.0.0.1:4173/atlas?dataset=hydrogen&country=KEN'); await dataResponse;
     await page.locator('.maplibregl-canvas').waitFor();
+    assert.ok(!atlasRequests.some((url) => url.includes('/data/grid/africa_transmission.geojson')), 'A transition deep link fetched the disabled large transmission layer.');
     await page.getByText('Energy transition', { exact: true }).waitFor();
     assert.equal(await page.getByLabel('Project status').count(), 1);
     await page.screenshot({ path: 'artifacts/browser/atlas-hydrogen.png' });
@@ -66,8 +69,9 @@ async function main() {
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'Workspace overflows the mobile viewport.');
     await page.screenshot({ path: 'artifacts/browser/workspace-mobile.png', fullPage: true });
     await page.goto('http://127.0.0.1:4173/');
-    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'Homepage overflows the mobile viewport.');
     await page.screenshot({ path: 'artifacts/browser/home-mobile.png', fullPage: true });
+    const overflow = await page.evaluate(() => [...document.querySelectorAll('body *')].filter((element) => { const box = element.getBoundingClientRect(); return box.right > window.innerWidth + 1 && box.width > 0; }).slice(0, 12).map((element) => ({ tag: element.tagName, className: element.className, width: element.getBoundingClientRect().width, right: element.getBoundingClientRect().right })));
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `Homepage overflows the mobile viewport: ${JSON.stringify(overflow)}`);
     assert.deepEqual(errors, [], `Browser errors: ${errors.join('; ')}`);
     console.log('Browser smoke checks passed: catalogue, filtering, comparison limits, dialog, CSV, scenario, map, and mobile layouts.');
   } finally {

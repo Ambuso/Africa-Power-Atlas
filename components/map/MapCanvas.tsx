@@ -203,6 +203,21 @@ export default function MapCanvas({
         return;
       }
     }
+    const raw = TRANSITION_KEYS.flatMap((key) => dataRef.current?.[key]?.features || []).find((feature) => feature.properties.id === identifier);
+    const summary = Object.values(transitionDataRef.current).flatMap((collection) => collection.features).find((feature) => feature.properties.record_kind === 'country_summary' && feature.properties.iso3 === raw?.properties.iso3);
+    if (summary?.geometry && (summary.geometry.type === 'Polygon' || summary.geometry.type === 'MultiPolygon')) {
+      const points: Array<[number, number]> = [];
+      const collect = (value: unknown) => {
+        if (!Array.isArray(value)) return;
+        if (typeof value[0] === 'number' && typeof value[1] === 'number') points.push([value[0], value[1]]);
+        else value.forEach(collect);
+      };
+      collect(summary.geometry.coordinates);
+      if (!points.length) return;
+      const bounds: [[number, number], [number, number]] = [[Math.min(...points.map((point) => point[0])), Math.min(...points.map((point) => point[1]))], [Math.max(...points.map((point) => point[0])), Math.max(...points.map((point) => point[1]))]];
+      map.fitBounds(bounds, { padding: 80, maxZoom: 5, duration: 800 });
+      focusedRecordRef.current = identifier;
+    }
   }, []);
 
   /* ─ refs that mirror state ─ */

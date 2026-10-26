@@ -30,6 +30,7 @@ export default function HomePage() {
   /* ─── data ─── */
   const [data, setData] = useState<Partial<MapDataBundle> | null>(null);
   const [retryKey, setRetryKey] = useState(0);
+  const [initialFiltersReady, setInitialFiltersReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -75,12 +76,14 @@ export default function HomePage() {
     if (iso2) setSelectedCountries([iso2]);
     setFocusRecord(params.get('record') || undefined);
     setTransitionStatus(params.get('status') || 'all');
+    setInitialFiltersReady(true);
   }, []);
 
 
   const load = useCallback(() => setRetryKey((key) => key + 1), []);
 
   useEffect(() => {
+    if (!initialFiltersReady) return;
     let cancelled = false;
     setLoadError(null);
     void loadAndPreparePowerGridData({
@@ -99,7 +102,7 @@ export default function HomePage() {
       if (!cancelled) setLoading(false);
     });
     return () => { cancelled = true; };
-  }, [visibleLayers, retryKey]);
+  }, [visibleLayers, retryKey, initialFiltersReady]);
 
   /* Safety net: if something gets stuck, still reveal the map after 8s */
   useEffect(() => {
