@@ -156,7 +156,7 @@ export default function LoadingScreen({ ready = false, onFadeComplete }: Props) 
 
         {/* Brand */}
         <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.4em] text-slate-500">
-          Africa Power Atlas
+          MapKwetu
         </div>
         <div className="mb-8 bg-gradient-to-r from-cyan-300 via-white to-violet-300 bg-clip-text text-[22px] font-light tracking-tight text-transparent">
           Lighting up the continent

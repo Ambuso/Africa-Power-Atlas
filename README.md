@@ -1,8 +1,24 @@
-# Africa Power Atlas
+# MapKwetu
 
-An interactive map of Africa's power infrastructure: power plants, transmission lines, substations, submarine cables, data centers and water stress, all on one globe.
+MapKwetu brings together Africa’s energy and digital infrastructure for exploration and focused research. It includes a public landing page, an interactive atlas, source notes, and a project-enquiry brief builder.
 
-**Live map:** https://africapowergrid.vercel.app/
+**Website:** https://africapowergrid.vercel.app/
+
+**Interactive atlas:** https://africapowergrid.vercel.app/atlas
+
+The repository retains its original `Africa-Power-Atlas` name. The product is branded MapKwetu.
+
+## Pages and enquiries
+
+- `/`: MapKwetu introduction, research offerings, and project brief builder.
+- `/atlas`: the existing interactive infrastructure map, filters, and analytics.
+- `/sources`: dataset sources, coverage, methods, and limitations.
+
+The enquiry form always downloads a text brief on the visitor’s device. To also prepare an email draft addressed to your business, set `MAPKWETU_CONTACT_EMAIL` in `.env.local` and in the hosting environment, then rebuild. The address is intentionally shown to visitors through their mail client, so use a public business inbox. Without it, the form clearly states that it only downloads a brief and sends nothing. No visitor data is stored by this form, and no email is sent automatically. The visitor reviews and sends the prepared email in their email app.
+
+Research and custom dashboards are offered by enquiry. This release does not implement subscriptions, payment collection, customer accounts, or an automated report-delivery service.
+
+The homepage illustration is generated from the committed Natural Earth boundaries and WRI plant records. It represents that dataset rather than complete current infrastructure coverage. To regenerate it after refreshing the data, run `python scripts/build_marketing_map.py`.
 
 ## Architecture
 
@@ -83,7 +99,7 @@ Next.js, React, TypeScript, MapLibre GL, Tailwind CSS, Python, GeoPandas
 ## Checks
 
 ```bash
-npm test             # data loading and retry regression tests
+npm test             # loading, map control, and enquiry regression tests
 npm run typecheck    # TypeScript checks
 npm run build        # production build
 ```
