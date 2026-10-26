@@ -52,3 +52,13 @@ test('PDF route returns no document when saving fails, and saves before attachme
  fail=true;const rejected=await route.POST(request(true));assert.equal(rejected.status,503);assert.match(rejected.headers.get('content-type'),/json/);
  fail=false;const success=await route.POST(request(true));assert.equal(success.status,200);assert.equal(saves,2);assert.match(success.headers.get('content-type'),/pdf/);assert.equal(success.headers.get('cache-control'),'private, no-store');assert.ok((await success.text()).startsWith('%PDF'));
 });
+test('request parser rejects cross-origin, oversized and malformed input',async()=>{
+ const make=(body,headers={})=>new Request('https://mapkwetu.test/api/site-check',{method:'POST',headers:{'content-type':'application/json',...headers},body});
+ await assert.rejects(server.readSiteRequest(make('{}',{origin:'https://unrelated.example'})),error=>error.status===403);
+ await assert.rejects(server.readSiteRequest(make('x'.repeat(8193))),error=>error.status===413);
+ await assert.rejects(server.readSiteRequest(make('{broken')),error=>error.status===400);
+});
+test('same-origin checks use the public host behind a Next server proxy',async()=>{
+ const request=new Request('http://localhost:4173/api/site-check',{method:'POST',headers:{host:'127.0.0.1:4173',origin:'http://127.0.0.1:4173','content-type':'application/json'},body:'{"label":"test"}'});
+ assert.equal((await server.readSiteRequest(request)).label,'test');
+});

@@ -15,7 +15,13 @@ export class SiteCheckRequestError extends Error {
 
 export async function readSiteRequest(request: Request): Promise<Record<string, unknown>> {
   const origin = request.headers.get('origin');
-  if (origin && origin !== new URL(request.url).origin) throw new SiteCheckRequestError('Submit this request from the MapKwetu website.', 403);
+  if (origin) {
+    const host = request.headers.get('host') || request.headers.get('x-forwarded-host') || new URL(request.url).host;
+    const protocol = request.headers.get('x-forwarded-proto') || new URL(request.url).protocol.replace(':', '');
+    let sameOrigin = false;
+    try { const source = new URL(origin); sameOrigin = source.host === host && source.protocol === protocol + ':'; } catch {}
+    if (!sameOrigin) throw new SiteCheckRequestError('Submit this request from the MapKwetu website.', 403);
+  }
   if (!request.headers.get('content-type')?.includes('application/json')) throw new SiteCheckRequestError('Send a JSON request.', 415);
   const reader = request.body?.getReader(); if (!reader) throw new SiteCheckRequestError('The request is empty.', 400);
   const chunks: Uint8Array[] = []; let size = 0;
@@ -89,6 +95,7 @@ export async function persistSiteCheckLead(lead: SiteCheckLead, config: LeadStor
 
 export function siteCheckError(error: unknown): Response {
   const known = error instanceof SiteCheckRequestError;
+  if (!known) console.error('Site Check failed:', error instanceof Error ? error.message : 'Unexpected error');
   return Response.json({ error: known ? error.message : 'The check could not be completed. Please try again shortly.' }, { status: known ? error.status : 503, headers: { 'Cache-Control': 'no-store' } });
 }
 export function checkedReport(spec: SiteSpec, index: SiteIndex, full = false) { const report = analyseSite(spec, index, full ? 10 : 3); report.id = randomUUID(); return report; }

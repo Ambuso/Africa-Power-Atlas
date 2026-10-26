@@ -5,6 +5,10 @@ const { spawn } = require('node:child_process');
 const { chromium } = require(process.env.MAPKWETU_BROWSER_MODULE || 'playwright');
 
 async function main() {
+  for (const route of ['site-check', 'site-check/report']) {
+    const trace = JSON.parse(fs.readFileSync(`.next/server/app/api/${route}/route.js.nft.json`, 'utf8'));
+    assert.ok(trace.files.some((file) => file.endsWith('.generated/site-check/index.json')), `Server deployment trace omits Site Check data: ${route}`);
+  }
   const server = spawn(process.execPath, [require.resolve('next/dist/bin/next'), 'start', '-p', '4173'], { stdio: ['ignore', 'pipe', 'pipe'] });
   let output = ''; server.stdout.on('data', (chunk) => { output += chunk; }); server.stderr.on('data', (chunk) => { output += chunk; });
   let browser;
@@ -55,7 +59,11 @@ async function main() {
     assert.ok((await page.locator('.kw-scenario-number strong').innerText()).startsWith('0'));
     await page.screenshot({ path: 'artifacts/browser/workspace-desktop.png', fullPage: true });
     await page.goto('http://127.0.0.1:4173/site-check');
-    await page.getByRole('button', { name: 'Run Site Check', exact: true }).click();
+    await page.getByPlaceholder('Try Nairobi, Mombasa, Lagos…').fill('Nairobi');
+    const siteResponsePromise = page.waitForResponse((response) => response.url().endsWith('/api/site-check') && response.request().method() === 'POST');
+    await page.locator('.kw-city-results button').first().click();
+    const siteResponse = await siteResponsePromise;
+    assert.equal(siteResponse.status(), 200, `Site Check failed: ${await siteResponse.text()}`);
     await page.locator('.kw-site-report-heading h2').waitFor();
     assert.equal(await page.locator('.kw-nearby-grid article').count(), 6);
     assert.ok((await page.locator('.kw-site-metric-grid article strong').first().innerText()).includes('km'));
