@@ -26,3 +26,5 @@ cache/
 !public/data/
 !public/data/**/
 !public/data/**/*.geojson
+
+.generated/

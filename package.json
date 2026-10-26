@@ -8,7 +8,8 @@
     "start": "next start",
     "prepare:data": "python scripts/prepare_data.py",
     "test": "node --test tests/*.test.cjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prebuild": "python3 scripts/build_site_check_index.py"
   },
   "dependencies": {
     "lucide-react": "^1.8.0",
