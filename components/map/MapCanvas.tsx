@@ -85,7 +85,7 @@ function registerPlantIcon(map: maplibregl.Map) {
 /* ─────────── types ─────────── */
 
 interface Props {
-  data?: MapDataBundle | null;
+  data?: Partial<MapDataBundle> | null;
   theme: MapThemeKey;
   visibleLayers: LayerVisibility;
   viewMode: ViewMode;
@@ -176,7 +176,7 @@ export default function MapCanvas({
     }
 
     return { type: 'FeatureCollection', features } as PlantFeatureCollection;
-  }, [data, renewableOnly, selectedFuels, selectedCountries]);
+  }, [data?.plants, renewableOnly, selectedFuels, selectedCountries]);
 
   /* ─ refs that mirror state ─ */
   const dataRef = useRef(data);
@@ -274,6 +274,12 @@ export default function MapCanvas({
     },
     [colorExpression, radiusExpression, glowRadiusExpression, pulseRadiusExpression],
   );
+
+  // Style initialization reads the latest paint without depending on slider changes.
+  const applyPlantPaintRef = useRef(applyPlantPaint);
+  useEffect(() => {
+    applyPlantPaintRef.current = applyPlantPaint;
+  }, [applyPlantPaint]);
 
   const clampOpacity = (v: number): number => {
     if (!Number.isFinite(v)) return 0;
@@ -538,7 +544,7 @@ export default function MapCanvas({
         installMapDataLayers(map);
         isStyleLoaded.current = true;
         pushAllData(map);
-        applyPlantPaint(map);
+        applyPlantPaintRef.current(map);
         syncPlantClustering(map);
         applyLayerVisibility(map, visibleLayersRef.current, viewModeRef.current);
         installInteractions(map);
@@ -592,7 +598,7 @@ export default function MapCanvas({
         installMapDataLayers(map);
         isStyleLoaded.current = true;
         pushAllData(map);
-        applyPlantPaint(map);
+        applyPlantPaintRef.current(map);
         syncPlantClustering(map);
         applyLayerVisibility(map, visibleLayersRef.current, viewModeRef.current);
         installInteractions(map);
@@ -605,7 +611,7 @@ export default function MapCanvas({
         });
       }, 60);
     });
-  }, [theme, pushAllData, applyPlantPaint, syncPlantClustering, installInteractions]);
+  }, [theme, pushAllData, syncPlantClustering, installInteractions]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -615,20 +621,20 @@ export default function MapCanvas({
     applyPlantPaint(map);
   }, [filteredPlants, applyPlantPaint]);
 
+  const previousSupportingData = useRef<Partial<MapDataBundle> | null>(null);
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !isStyleLoaded.current) return;
 
-    updateSourceData(map, SOURCE_IDS.transmission, data?.transmission ?? null);
-    updateSourceData(map, SOURCE_IDS.substations, data?.substations ?? null);
-    updateSourceData(map, SOURCE_IDS.dataCenters, data?.dataCenters ?? null);
-    updateSourceData(map, SOURCE_IDS.waterStress, data?.waterStress ?? null);
-    updateSourceData(map, SOURCE_IDS.submarineCables, data?.submarineCables ?? null);
-    updateSourceData(map, SOURCE_IDS.plannedUpgrades, data?.plannedUpgrades ?? null);
-    updateSourceData(map, SOURCE_IDS.admin0, data?.admin0 ?? null);
-    updateSourceData(map, SOURCE_IDS.admin1, data?.admin1 ?? null);
-    updateSourceData(map, SOURCE_IDS.admin2, data?.admin2 ?? null);
-    updateSourceData(map, SOURCE_IDS.placeLabels, data?.placeLabels ?? null);
+    // Progressive loading should not reparse unchanged large GeoJSON sources.
+    const keys = Object.keys(SOURCE_IDS) as Array<keyof MapDataBundle>;
+    for (const key of keys) {
+      if (key === 'plants') continue;
+      if (data?.[key] !== previousSupportingData.current?.[key]) {
+        updateSourceData(map, SOURCE_IDS[key], data?.[key] ?? null);
+      }
+    }
+    previousSupportingData.current = data ?? null;
 
     if (!hasLitUp.current && data && isStyleLoaded.current) {
       requestAnimationFrame(() => lightUpAnimation(map));

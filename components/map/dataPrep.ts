@@ -8,6 +8,7 @@ import type {
   FeatureCollection,
   FuelStat,
   MapDataBundle,
+  LayerVisibility,
   PlantBundle,
   PlantFeatureCollection,
 } from '@/lib/types';
@@ -429,10 +430,10 @@ export function prepareAdminBoundaries(
 async function fetchFirstAvailable(
   candidates: string[],
   label: string,
-): Promise<unknown | null> {
+): Promise<FeatureCollection> {
   for (const url of candidates) {
     try {
-      const res = await fetch(url, { cache: 'no-store' });
+      const res = await fetch(url);
       if (!res.ok) continue;
 
       const json = await res.json();
@@ -445,14 +446,12 @@ async function fetchFirstAvailable(
     }
   }
 
-  console.warn(`[dataPrep] failed to load ${label}. Tried:`, candidates);
-  return null;
+  throw new Error(`Unable to load ${label}. Check your connection and retry.`);
 }
 
 /* ─────────── main loader ─────────── */
 
-export async function loadAndPreparePowerGridData(): Promise<MapDataBundle> {
-  const urlCandidates = {
+const urlCandidates = {
     plants: [
       '/data/plants/africa_power_plants.geojson',
     ],
@@ -499,33 +498,69 @@ export async function loadAndPreparePowerGridData(): Promise<MapDataBundle> {
     ],
   } as const;
 
-  const keys = Object.keys(urlCandidates) as Array<keyof typeof urlCandidates>;
+type LayerKey = keyof MapDataBundle;
 
-  const results = await Promise.all(
-    keys.map((key) => fetchFirstAvailable([...urlCandidates[key]], key)),
+const preparedLayers = new Map<LayerKey, Promise<MapDataBundle[LayerKey]>>();
+
+const prepareLayer: { [K in LayerKey]: (raw: FeatureCollection) => MapDataBundle[K] } = {
+  plants: preparePowerPlants,
+  transmission: prepareTransmission,
+  substations: prepareSubstations,
+  dataCenters: prepareDataCenters,
+  waterStress: passThroughFC,
+  submarineCables: passThroughFC,
+  plannedUpgrades: preparePlannedUpgrades,
+  admin0: (raw) => prepareAdminBoundaries(raw, 0),
+  admin1: (raw) => prepareAdminBoundaries(raw, 1),
+  admin2: (raw) => prepareAdminBoundaries(raw, 2),
+  placeLabels: passThroughFC,
+};
+
+function loadLayer<K extends LayerKey>(key: K): Promise<MapDataBundle[K]> {
+  // Each key is only populated by its corresponding preparer below.
+  const cached = preparedLayers.get(key) as Promise<MapDataBundle[K]> | undefined;
+  if (cached) return cached;
+  const request = fetchFirstAvailable([...urlCandidates[key]], key)
+    .then(prepareLayer[key])
+    .catch((error: unknown) => {
+      // Keep successful results and in-flight requests; failures must be retryable.
+      preparedLayers.delete(key);
+      throw error;
+    });
+  preparedLayers.set(key, request);
+  return request;
+}
+
+interface LoadOptions {
+  visibleLayers?: LayerVisibility;
+  onLayerLoaded?: (layer: Partial<MapDataBundle>) => void;
+}
+
+export async function loadAndPreparePowerGridData({
+  visibleLayers,
+  onLayerLoaded,
+}: LoadOptions = {}): Promise<Partial<MapDataBundle>> {
+  const keys = (Object.keys(urlCandidates) as LayerKey[]).filter((key) => {
+    // Plants also supply the totals and filter panel, even when markers are hidden.
+    if (!visibleLayers || key === 'plants') return true;
+    // Country and province labels use these sources independently of boundary toggles.
+    if (key === 'admin0' || key === 'admin1') {
+      return visibleLayers[key] || visibleLayers.placeLabels;
+    }
+    return visibleLayers[key];
+  });
+  const bundle: Partial<MapDataBundle> = {};
+  const results = await Promise.allSettled(keys.map(async (key) => {
+    const value = await loadLayer(key);
+    const layer = { [key]: value } as Partial<MapDataBundle>;
+    Object.assign(bundle, layer);
+    onLayerLoaded?.(layer);
+  }));
+  const failures = results.flatMap((result, i) =>
+    result.status === 'rejected' ? [keys[i]] : [],
   );
-
-  const raw = Object.fromEntries(
-    keys.map((key, i) => [key, results[i]]),
-  ) as Record<keyof typeof urlCandidates, unknown | null>;
-
-  const bundle: MapDataBundle = {
-    plants: preparePowerPlants(raw.plants),
-    transmission: prepareTransmission(raw.transmission),
-    substations: prepareSubstations(raw.substations),
-    dataCenters: prepareDataCenters(raw.dataCenters),
-    waterStress: raw.waterStress ? passThroughFC(raw.waterStress) : null,
-    submarineCables: raw.submarineCables ? passThroughFC(raw.submarineCables) : null,
-    plannedUpgrades: preparePlannedUpgrades(raw.plannedUpgrades),
-    admin0: prepareAdminBoundaries(raw.admin0, 0),
-    admin1: prepareAdminBoundaries(raw.admin1, 1),
-    admin2: prepareAdminBoundaries(raw.admin2, 2),
-    placeLabels: raw.placeLabels ? passThroughFC(raw.placeLabels) : null,
-  };
-
-  console.log('[dataPrep] admin0 features:', bundle.admin0?.features?.length ?? 0);
-  console.log('[dataPrep] admin1 features:', bundle.admin1?.features?.length ?? 0);
-  console.log('[dataPrep] admin2 features:', bundle.admin2?.features?.length ?? 0);
-
+  if (failures.length) {
+    throw new Error(`Unable to load: ${failures.join(', ')}. Check your connection and retry.`);
+  }
   return bundle;
 }
