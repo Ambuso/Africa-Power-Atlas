@@ -1,22 +1,24 @@
-import urllib.request, re, json
-PAGES = [
-"https://www.iea.org/data-and-statistics/data-product/hydrogen-production-and-infrastructure-projects-database",
-"https://www.iea.org/data-and-statistics/data-product/carbon-capture-utilisation-and-storage-projects-database",
-"https://globalenergymonitor.org/projects/global-geothermal-power-tracker/",
-]
-for url in PAGES:
- print("\nPAGE", url)
+import urllib.request,json,sqlite3,tempfile,os
+URLS={
+"hydrogen":"https://data.kapsarc.org/api/explore/v2.1/catalog/datasets/iea-hydrogen-projects-database-2021-revised/exports/json",
+"geothermal":"https://publicgemdata.nyc3.cdn.digitaloceanspaces.com/geothermal/2026-03/geothermal_map_2026-02-13.geojson",
+"ccs":"https://raw.githubusercontent.com/liuh886/ccus-policy-hub/main/agent/ccus-ai-agent/db/ccus_master.sqlite",
+}
+for key,url in URLS.items():
+ print("\nSOURCE",key,url,flush=True)
  try:
-  req=urllib.request.Request(url, headers={"User-Agent":"MapKwetu-research/1.0 (public open-data ingestion)"})
-  html=urllib.request.urlopen(req,timeout=60).read().decode()
-  print("LENGTH",len(html))
-  for pattern in [r'.{0,250}xlsx.{0,350}',r'.{0,120}blob.core.windows.net.{0,250}',r'.{0,100}downloadUrl.{0,250}',r'.{0,80}api.iea.org.{0,180}',r'.{0,120}geothermal.{0,150}csv.{0,120}']:
-   for m in re.findall(pattern,html,re.I)[:20]: print(m)
+  b=urllib.request.urlopen(urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0"}),timeout=100).read()
+  print("BYTES",len(b))
+  if key=="ccs":
+   p=tempfile.mktemp(suffix=".sqlite");open(p,"wb").write(b)
+   c=sqlite3.connect(p);c.row_factory=sqlite3.Row
+   print("SCHEMA",list(c.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name IN ('facilities','facility_i18n')")))
+   for row in c.execute("SELECT f.*,i.* FROM facilities f JOIN facility_i18n i ON f.id=i.facility_id AND i.lang='en' WHERE f.country IN ('Algeria','Egypt','South Africa','DZA','EGY','ZAF') LIMIT 4"): print(json.dumps(dict(row),ensure_ascii=False)[:8000])
+   print("COUNTRIES",c.execute("SELECT DISTINCT country FROM facilities").fetchall()[:10])
+   os.unlink(p)
+  else:
+   d=json.loads(b)
+   if isinstance(d,list):print("COUNT",len(d),"SAMPLE",json.dumps(d[:2],ensure_ascii=False)[:12000])
+   elif "features" in d:print("COUNT",len(d["features"]),"SAMPLE",json.dumps(d["features"][:2],ensure_ascii=False)[:12000])
+   else:print(json.dumps(d)[:12000])
  except Exception as e:print(type(e).__name__,str(e))
-url="https://api.climatetrace.org/v7/sources?year=2025&gas=co2e_100yr&sectors=power&continent=Africa&limit=1000&offset=0"
-print("\nEMISSIONS",url)
-try:
- data=json.load(urllib.request.urlopen(url,timeout=90))
- print("TYPE",type(data).__name__,"LENGTH",len(data))
- print(json.dumps(data[:2] if isinstance(data,list) else data)[:9000])
-except Exception as e:print(type(e).__name__,str(e))
