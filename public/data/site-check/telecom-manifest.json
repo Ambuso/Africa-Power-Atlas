@@ -1,0 +1,19 @@
+{
+  "extracted_at": "2026-10-26T17:48:05.676376+00:00",
+  "publisher": "OpenStreetMap contributors",
+  "license": "ODbL 1.0",
+  "attribution_url": "https://www.openstreetmap.org/copyright",
+  "coverage_note": "Explicit OSM telecom tags within the query bbox and mapped African country polygons. Coarse coastal boundaries can omit stations. Absence of a record does not imply absence of infrastructure.",
+  "datasets": {
+    "landing-stations": {
+      "count": 2,
+      "query": "[out:json][timeout:180][bbox:-36,-26,38,64];(nwr[\"telecom\"=\"cable_landing_station\"];nwr[\"man_made\"=\"cable_landing_station\"];nwr[\"telecom:submarine\"=\"cable_landing_station\"];);out body center;",
+      "status": "snapshot prepared"
+    },
+    "fibre-routes": {
+      "count": 6,
+      "query": "[out:json][timeout:240][bbox:-36,-26,38,64];(way[\"communication\"=\"line\"][\"telecom:medium\"~\"^(fibre|fiber)$\"][\"submarine\"!=\"yes\"][\"location\"!=\"underwater\"][\"seamark:type\"!=\"cable_submarine\"];way[\"telecom\"~\"^(line|cable)$\"][\"telecom:medium\"~\"^(fibre|fiber)$\"][\"submarine\"!=\"yes\"][\"location\"!=\"underwater\"][\"seamark:type\"!=\"cable_submarine\"];);out body geom;",
+      "status": "snapshot prepared"
+    }
+  }
+}

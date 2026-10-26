@@ -14,6 +14,7 @@ export function SiteHeader() {
     <header className="kw-header">
       <Brand />
       <nav aria-label="Main navigation">
+        <Link href="/site-check">Site Check</Link>
         <Link href="/atlas">Atlas</Link>
         <Link href="/datasets">Datasets</Link>
         <Link href="/transition">Transition workspace</Link>
@@ -28,7 +29,7 @@ export function SiteFooter() {
   return (
     <footer className="kw-footer">
       <div><Brand light /><p>Our continent. A clearer picture.</p></div>
-      <nav aria-label="Footer navigation"><Link href="/atlas">Open atlas ↗</Link><Link href="/datasets">Datasets</Link><Link href="/transition">Workspace</Link><Link href="/sources">Sources & methodology</Link><a href="https://github.com/Ambuso/Africa-Power-Atlas" target="_blank" rel="noreferrer">GitHub ↗</a></nav>
+      <nav aria-label="Footer navigation"><Link href="/site-check">Check a site ↗</Link><Link href="/atlas">Open atlas ↗</Link><Link href="/datasets">Datasets</Link><Link href="/transition">Workspace</Link><Link href="/sources">Sources & methodology</Link><a href="https://github.com/Ambuso/Africa-Power-Atlas" target="_blank" rel="noreferrer">GitHub ↗</a></nav>
       <span>Built by Ambuso · MapKwetu {new Date().getFullYear()}</span>
     </footer>
   );

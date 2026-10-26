@@ -12,8 +12,8 @@ export default function HomePage() {
         <div className="kw-hero-copy">
           <p className="kw-eyebrow"><span /> AFRICA, IN CONTEXT</p>
           <h1 id="hero-title">See the connections.<br /><span>Find your next<br className="kw-desktop-break" /> starting point.</span></h1>
-          <p className="kw-hero-description">Power. Connectivity. Place. Explore the infrastructure shaping Africa, together on one map.</p>
-          <div className="kw-actions"><Link className="kw-button" href="/atlas">Explore the free atlas <ArrowUpRight size={18} /></Link><a className="kw-text-link" href="#research">For your next project <span aria-hidden="true">↓</span></a></div>
+          <p className="kw-hero-description">Check a location against Africa’s energy and digital infrastructure. Get nearby records, water context, and the questions that still need answers.</p>
+          <div className="kw-actions"><Link className="kw-button" href="/site-check">Run a free Site Check <ArrowUpRight size={18} /></Link><a className="kw-text-link" href="#research">For your next project <span aria-hidden="true">↓</span></a></div>
           <div className="kw-hero-footnote"><span className="kw-tiny-map">↗</span><span>Open exploration. Sourced data.<br /><strong>A continent of possibilities.</strong></span></div>
         </div>
         <div className="kw-map-stage">
