@@ -11,6 +11,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { TRANSITION_DATASETS, TRANSITION_KEYS, STATUS_LABELS } from '@/lib/transition';
 import {
   Activity, ChevronDown, ChevronRight, CloudRain, Globe, Layers,
   Map as MapIcon, Radio, Square, Type, Waves, X, Zap, TrendingUp,
@@ -36,6 +38,8 @@ interface Props {
   totalPlants: number;
   totalGW: string;
   visiblePlantCount: number;
+  transitionStatus: string;
+  onTransitionStatusChange: (status: string) => void;
 }
 
 type SectionKey = 'layers' | 'boundaries' | 'fuels' | 'themes';
@@ -84,6 +88,8 @@ export default function LayerPanel({
   totalPlants,
   totalGW,
   visiblePlantCount,
+  transitionStatus,
+  onTransitionStatusChange,
 }: Props) {
   const [open, setOpen] = useState(true);
   const [expanded, setExpanded] = useState<Record<SectionKey, boolean>>({
@@ -184,6 +190,13 @@ export default function LayerPanel({
               ))}
             </div>
           </Section>
+
+          <div className="border-b border-white/6 px-2.5 pb-3 pt-3">
+            <div className="mb-2 flex items-center justify-between px-1.5"><span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300">Energy transition</span><Link href="/transition" className="text-[10px] text-slate-400 hover:text-white">Workspace ↗</Link></div>
+            {TRANSITION_KEYS.map((key) => <LayerRow key={key} active={visibility[key]} label={TRANSITION_DATASETS[key].label} description={key === 'emissions' ? '2025 estimates · CO₂e' : 'Source-linked project records'} icon={<Zap size={13} />} color={TRANSITION_DATASETS[key].color} onClick={() => onVisibilityChange(key)} />)}
+            <label className="mx-2 mt-3 block text-[10px] text-slate-400">Project status<select value={transitionStatus} onChange={(event) => onTransitionStatusChange(event.target.value)} className="mt-1 w-full rounded border border-white/10 bg-slate-900 px-2 py-2 text-[11px] text-slate-200"><option value="all">All transition stages</option>{Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <p className="px-2 pt-2 text-[9px] leading-relaxed text-slate-500">Transition layers are separate from the plant totals above. Country shading represents records with unpublished facility locations.</p>
+          </div>
 
           {/* Boundaries & labels */}
           <Section
@@ -529,3 +542,4 @@ function ThemeSwatch({ themeKey }: { themeKey: MapThemeKey }) {
     </div>
   );
 }
+

@@ -13,6 +13,7 @@ import { colorForFuel } from './fuelColors';
 import type { LayerVisibility } from '@/lib/types';
 import Link from 'next/link';
 import { DATA_SOURCES } from '@/lib/dataSources';
+import { TRANSITION_KEYS, TRANSITION_DATASETS } from '@/lib/transition';
 
 const VOLTAGE_LEGEND: { label: string; color: string }[] = [
   { label: '735 kV+',    color: '#ef4444' },
@@ -38,7 +39,7 @@ export default function MapLegend({ visibility }: Props) {
   const [open, setOpen] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
 
-  const anyVisible =
+  const anyVisible = TRANSITION_KEYS.some((key) => visibility[key]) ||
     visibility.plants ||
     visibility.transmission ||
     visibility.submarineCables ||
@@ -67,6 +68,7 @@ export default function MapLegend({ visibility }: Props) {
 
         {open && (
           <div className="space-y-3.5 border-t border-white/8 px-3.5 py-3">
+            {TRANSITION_KEYS.some((key) => visibility[key]) && <section><div className="mb-2 text-[9px] uppercase tracking-wider text-slate-500">Energy transition</div>{TRANSITION_KEYS.filter((key) => visibility[key]).map((key) => <div key={key} className="mb-1 flex items-center gap-2 text-[10px] text-slate-300"><span className="h-2 w-2 rounded-full" style={{ background: TRANSITION_DATASETS[key].color }} />{TRANSITION_DATASETS[key].label}</div>)}<p className="mt-2 text-[9px] leading-relaxed text-slate-500">Dots use source coordinates. Shaded countries summarise unlocated projects; they are not facility locations. Marker size does not compare unlike capacity units.</p><Link href="/datasets" className="mt-2 block text-[10px] text-cyan-300">Dataset releases & coverage ↗</Link></section>}
             {visibility.plants && (
               <section>
                 <div className="mb-1.5 text-[9px] font-semibold uppercase tracking-[0.22em] text-slate-500">
@@ -144,6 +146,7 @@ export default function MapLegend({ visibility }: Props) {
               </section>
             )}
 
+            {TRANSITION_KEYS.some((key) => visibility[key]) && <section><div className="mb-2 text-[9px] uppercase tracking-wider text-slate-500">Energy transition</div>{TRANSITION_KEYS.filter((key) => visibility[key]).map((key) => <div key={key} className="mb-1 flex items-center gap-2 text-[10px] text-slate-300"><span className="h-2 w-2 rounded-full" style={{ background: TRANSITION_DATASETS[key].color }} />{TRANSITION_DATASETS[key].label}</div>)}<p className="mt-2 text-[9px] leading-relaxed text-slate-500">Dots use source coordinates. Shaded countries summarise unlocated projects; they are not facility locations. Marker size does not compare unlike capacity units.</p><Link href="/datasets" className="mt-2 block text-[10px] text-cyan-300">Dataset releases & coverage ↗</Link></section>}
             {visibility.plants && (
               <section>
                 <div className="mb-2 text-[9px] font-semibold uppercase tracking-[0.22em] text-slate-500">
@@ -229,3 +232,4 @@ function SizeDot({ size, label }: { size: number; label: string }) {
     </div>
   );
 }
+

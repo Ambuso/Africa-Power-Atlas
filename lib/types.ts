@@ -58,6 +58,10 @@ export interface PlantBundle {
 }
 
 export interface MapDataBundle {
+  hydrogen: FeatureCollection;
+  carbonCapture: FeatureCollection;
+  geothermal: FeatureCollection;
+  emissions: FeatureCollection;
   plants: PlantBundle;
   transmission: FeatureCollection;
   substations: FeatureCollection;
@@ -73,6 +77,10 @@ export interface MapDataBundle {
 
 /* UI state */
 export interface LayerVisibility {
+  hydrogen: boolean;
+  carbonCapture: boolean;
+  geothermal: boolean;
+  emissions: boolean;
   plants: boolean;
   dataCenters: boolean;
   transmission: boolean;
