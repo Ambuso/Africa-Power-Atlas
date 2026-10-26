@@ -245,6 +245,7 @@ def emissions(countries):
             all_rows.append(record)
         if new == 0: raise ValueError('Climate TRACE pagination repeated a page.')
         offset += len(page)
+        if len(page) < 1000: break
         if offset > 10000: raise ValueError('Unexpected power inventory size; inspect pagination before importing.')
     return all_rows, hasher.hexdigest()
 
