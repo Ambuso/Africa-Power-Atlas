@@ -54,7 +54,7 @@ SOURCES = {
         'label': 'Power-sector emissions estimates', 'source': 'Climate TRACE v7 public API',
         'source_url': 'https://www.climatetrace.org/data',
         'download_url': 'https://api.climatetrace.org/v7/sources?year=2025&gas=co2e_100yr&sectors=power&continent=Africa&limit=1000&offset=0',
-        'source_release': '2025 annual inventory / retrieved October 2026', 'license': 'CC BY 4.0 (emissions and source metadata)',
+        'source_release': '2025 annual inventory (API v7)', 'license': 'CC BY 4.0 (emissions and source metadata)',
         'coverage': 'African point-source power-sector records, year 2025, gas co2e_100yr. Totals apply only to retained inventory records.',
         'limitations': ['Estimated greenhouse-gas emissions, not direct measurements.', 'Units are metric tonnes CO2e, AR6 GWP100, per year.', 'Restricted activity and capacity fields are omitted; inventory sums are not national totals.'],
     },
@@ -236,7 +236,7 @@ def emissions(countries):
             seen.add(key); new += 1
             if row.get('year') != 2025 or row.get('gas') != 'co2e_100yr' or row.get('sector') != 'power': raise ValueError('Climate TRACE returned a different gas, year, or sector.')
             country = countries.get(norm(row.get('country')))
-            if country is None: raise ValueError('Climate TRACE returned non-African coverage.')
+            if country is None: continue  # Exclude territories outside the atlas country crosswalk.
             if row.get('sourceType') != 'point-source': continue
             quantity = number(row.get('emissionsQuantity'))
             centroid = row.get('centroid') or {}; geo = geometry(centroid.get('longitude'), centroid.get('latitude'))
