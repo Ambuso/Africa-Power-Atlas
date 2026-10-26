@@ -33,20 +33,22 @@ The project has two parts. A Python script downloads the public datasets, clips 
 
 ## Run it locally
 
-You need Node.js and Python 3.
+You need Node.js. Python 3 is optional and is used to refresh the datasets.
 
 ```bash
 git clone https://github.com/Ambuso/Africa-Power-Atlas.git
 cd Africa-Power-Atlas
 
-npm install
-pip install geopandas pandas requests
+npm ci
+pip install geopandas pandas requests   # only needed to refresh datasets
 
-npm run prepare:data   # downloads the sources and writes public/data/
+npm run prepare:data   # optional: refresh the committed data in public/data/
 npm run dev            # http://localhost:3000
 ```
 
-The prepared GeoJSON files are not stored in the repository, so run `prepare:data` before the first start. The substations step queries OpenStreetMap and can take a few minutes.
+Prepared GeoJSON files are committed in `public/data/`, so you can start the app without running Python. Python 3 and the listed Python packages are only needed to refresh the datasets. The substations step queries OpenStreetMap and can take a few minutes.
+
+The browser loads enabled layers on demand and reuses successful results during the session. Country and province boundaries also load when place labels need them. Plants appear before larger layers finish loading. Failed layers show an error with a Retry button; successful layers remain available. Browser HTTP caching follows the hosting server’s cache headers.
 
 Useful options for the data script:
 
@@ -76,3 +78,14 @@ scripts/              prepare_data.py, the data pipeline
 ## Built with
 
 Next.js, React, TypeScript, MapLibre GL, Tailwind CSS, Python, GeoPandas
+
+
+## Checks
+
+```bash
+npm test             # data loading and retry regression tests
+npm run typecheck    # TypeScript checks
+npm run build        # production build
+```
+
+GitHub Actions runs these checks for pushes and pull requests to `main`.

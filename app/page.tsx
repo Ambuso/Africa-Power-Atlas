@@ -27,7 +27,8 @@ const MapCanvas = dynamic(() => import('@/components/map/MapCanvas'), {
 
 export default function HomePage() {
   /* ─── data ─── */
-  const [data, setData] = useState<MapDataBundle | null>(null);
+  const [data, setData] = useState<Partial<MapDataBundle> | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -63,39 +64,28 @@ export default function HomePage() {
 
   /* ─── effects ─── */
 
-  const load = useCallback(async () => {
-    try {
-      setLoading(true);
-      setLoadError(null);
-      const result = await loadAndPreparePowerGridData();
-      setData(result);
-    } catch (error) {
-      console.error('Failed to load power grid data:', error);
-      setLoadError(
-        error instanceof Error ? error.message : 'Unable to load map data.',
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const load = useCallback(() => setRetryKey((key) => key + 1), []);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        setLoading(true);
-        const result = await loadAndPreparePowerGridData();
-        if (!cancelled) setData(result);
-      } catch (err) {
-        if (!cancelled) {
-          setLoadError(err instanceof Error ? err.message : 'Unable to load map data.');
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+    setLoadError(null);
+    void loadAndPreparePowerGridData({
+      visibleLayers,
+      onLayerLoaded: (layer) => {
+        if (cancelled) return;
+        setData((current) => ({ ...current, ...layer }));
+        // Let people use the map while larger supporting layers load.
+        if (layer.plants) setLoading(false);
+      },
+    }).catch((error: unknown) => {
+      if (!cancelled) {
+        setLoadError(error instanceof Error ? error.message : 'Unable to load map data.');
       }
-    })();
+    }).finally(() => {
+      if (!cancelled) setLoading(false);
+    });
     return () => { cancelled = true; };
-  }, []);
+  }, [visibleLayers, retryKey]);
 
   /* Safety net: if something gets stuck, still reveal the map after 8s */
   useEffect(() => {
@@ -241,7 +231,7 @@ export default function HomePage() {
             <div>
               <div className="text-sm font-semibold text-red-300">Data load failed</div>
               <div className="text-xs text-slate-400">
-                The map could not finish preparing all layers.
+                Some layers could not load. Available layers remain visible.
               </div>
             </div>
           </div>
