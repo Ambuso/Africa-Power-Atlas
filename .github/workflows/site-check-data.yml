@@ -23,4 +23,11 @@ jobs:
           git add public/data/site-check
           if git diff --cached --quiet; then exit 0; fi
           git -c user.name="MapKwetu data preparation" -c user.email="145032237+Ambuso@users.noreply.github.com" commit -m "Add attributable OSM cable station and fibre snapshots"
-          git push origin HEAD:"$GITHUB_REF_NAME"
+          git pull --rebase origin "$GITHUB_REF_NAME"\n          git push origin HEAD:"$GITHUB_REF_NAME"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: site-check-telecom-snapshots
+          path: public/data/site-check
+          if-no-files-found: ignore

@@ -5,6 +5,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+from functools import lru_cache
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'public/data/site-check'
@@ -22,15 +23,29 @@ def inside_ring(point, ring):
     return inside
 
 
+@lru_cache(maxsize=100)
+def bounds(serialized):
+    geometry = json.loads(serialized)
+    def points(value):
+        if isinstance(value[0], (int, float)): yield value
+        else:
+            for part in value: yield from points(part)
+    coordinates = list(points(geometry['coordinates']))
+    return min(p[0] for p in coordinates), min(p[1] for p in coordinates), max(p[0] for p in coordinates), max(p[1] for p in coordinates)
+
+
 def country_for(point, countries):
     for feature in countries:
-        geometry = feature['geometry']; polygons = geometry['coordinates'] if geometry['type'] == 'MultiPolygon' else [geometry['coordinates']]
+        geometry = feature['geometry']; west, south, east, north = feature['_bounds']
+        if not (west <= point[0] <= east and south <= point[1] <= north): continue
+        polygons = geometry['coordinates'] if geometry['type'] == 'MultiPolygon' else [geometry['coordinates']]
         if any(inside_ring(point, polygon[0]) and not any(inside_ring(point, hole) for hole in polygon[1:]) for polygon in polygons): return feature['properties']['name']
     return None
 
 
 def main():
     countries = json.loads((ROOT / 'public/data/admin/africa_admin0.geojson').read_text())['features']
+    for feature in countries: feature['_bounds'] = bounds(json.dumps(feature['geometry']))
     generated = datetime.now(timezone.utc).isoformat(); outputs = {}; manifest = {'extracted_at': generated, 'publisher': 'OpenStreetMap contributors', 'license': 'ODbL 1.0', 'attribution_url': 'https://www.openstreetmap.org/copyright', 'coverage_note': 'Explicit OSM telecom tags within the query bbox and mapped African country polygons. Coarse coastal boundaries can omit stations. Absence of a record does not imply absence of infrastructure.', 'datasets': {}}
     for key, query in QUERIES.items():
         print('Fetching', key, flush=True); payload = urllib.parse.urlencode({'data': query}).encode(); data = None
