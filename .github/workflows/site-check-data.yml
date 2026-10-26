@@ -18,19 +18,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Recover initial successfully extracted snapshot
-        if: hashFiles('public/data/site-check/telecom-manifest.json') == ''
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          name: site-check-telecom-snapshots
-          run-id: 40371991164
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: public/data/site-check
       - run: python scripts/prepare_site_check_telecom.py
-        if: github.event_name == 'workflow_dispatch' || hashFiles('public/data/site-check/telecom-manifest.json') == ''
       - name: Commit source snapshots
         run: |
+          git config user.name "MapKwetu data preparation"
+          git config user.email "145032237+Ambuso@users.noreply.github.com"
           git add public/data/site-check
           if git diff --cached --quiet; then exit 0; fi
           git -c user.name="MapKwetu data preparation" -c user.email="145032237+Ambuso@users.noreply.github.com" commit -m "Add attributable OSM cable station and fibre snapshots"

@@ -26,4 +26,4 @@ New landing-station and terrestrial-fibre snapshots use explicitly tagged OSM re
 
 Site Check does **not** reuse TeleGeography raw cable geometry from the existing atlas: commercial raw-data rights require a separate licence. Existing atlas displays are unchanged. A source record does not establish a physical connection offer or service availability.
 
-Run `.github/workflows/site-check-data.yml` manually on the feature branch to refresh OSM snapshots; it retains existing data on acquisition failure. No recurring refresh or maintenance promise is enabled. Review source differences and CI before merging future snapshots.
+Run `.github/workflows/site-check-data.yml` manually on the branch you intend to update to refresh OSM snapshots; it retains existing data on acquisition failure. No recurring refresh or maintenance promise is enabled. Review source differences and CI before merging future snapshots.

@@ -49,7 +49,7 @@ def main():
     generated = datetime.now(timezone.utc).isoformat(); outputs = {}; manifest = {'extracted_at': generated, 'publisher': 'OpenStreetMap contributors', 'license': 'ODbL 1.0', 'attribution_url': 'https://www.openstreetmap.org/copyright', 'coverage_note': 'Explicit OSM telecom tags within the query bbox and mapped African country polygons. Coarse coastal boundaries can omit stations. Absence of a record does not imply absence of infrastructure.', 'datasets': {}}
     for key, query in QUERIES.items():
         print('Fetching', key, flush=True); payload = urllib.parse.urlencode({'data': query}).encode(); data = None
-        for endpoint in ['https://overpass.private.coffee/api/interpreter', 'https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']:
+        for endpoint in ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://overpass.private.coffee/api/interpreter']:
             try:
                 request = urllib.request.Request(endpoint + '?' + urllib.parse.urlencode({'data': query}), headers={'User-Agent': 'MapKwetu Site Check open-data preparation', 'Content-Type': 'application/x-www-form-urlencoded'})
                 data = json.load(urllib.request.urlopen(request, timeout=100))
