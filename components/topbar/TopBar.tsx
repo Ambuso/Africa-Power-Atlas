@@ -9,6 +9,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import {
   ChevronDown, CircleDot, Flame, Globe2, Grid2X2, Layers,
   Leaf, MapPin, Zap,
@@ -111,19 +112,19 @@ export default function TopBar({
         <div className="flex h-full items-center justify-between gap-4">
           {/* ─── LEFT ─── */}
           <div className="flex min-w-0 items-center gap-4">
-            <div className="flex items-center gap-2.5">
+            <Link href="/" aria-label="MapKwetu home" className="flex items-center gap-2.5">
               <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-sky-600 shadow-[0_0_24px_-4px_rgba(34,211,238,0.55)]">
                 <Zap size={15} className="text-slate-950" strokeWidth={2.6} />
               </div>
               <div className="hidden md:block leading-tight">
                 <div className="text-[13px] font-bold tracking-tight text-white">
-                  Africa Power Atlas
+                  MapKwetu
                 </div>
                 <div className="text-[9.5px] uppercase tracking-[0.22em] text-slate-500">
-                  Live infrastructure explorer
+                  Africa infrastructure atlas
                 </div>
               </div>
-            </div>
+            </Link>
 
             <div className="hidden h-7 w-px bg-white/10 md:block" />
 
@@ -256,6 +257,10 @@ export default function TopBar({
               <Leaf size={12} />
               Renewable
             </button>
+
+            <Link href="/#request" className="hidden rounded-full border border-cyan-400/25 px-3 py-1.5 text-[11px] font-medium text-cyan-200 transition hover:bg-cyan-400/10 xl:inline-flex">
+              Research brief ↗
+            </Link>
 
             {/* Bubble slider */}
             <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">

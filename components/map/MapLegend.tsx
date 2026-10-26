@@ -11,6 +11,8 @@ import { useState } from 'react';
 import { ChevronDown, Database } from 'lucide-react';
 import { colorForFuel } from './fuelColors';
 import type { LayerVisibility } from '@/lib/types';
+import Link from 'next/link';
+import { DATA_SOURCES } from '@/lib/dataSources';
 
 const VOLTAGE_LEGEND: { label: string; color: string }[] = [
   { label: '735 kV+',    color: '#ef4444' },
@@ -28,45 +30,12 @@ const FUEL_ORDER: string[] = [
 
 /* ─────────── data sources ─────────── */
 
-const DATA_SOURCES: { label: string; detail: string; href: string }[] = [
-  {
-    label: 'Power plants',
-    detail: 'Global Energy Monitor · WRI GPPDB',
-    href: 'https://globalenergymonitor.org/',
-  },
-  {
-    label: 'Transmission grid',
-    detail: 'OpenStreetMap · OpenInfraMap',
-    href: 'https://openinframap.org/',
-  },
-  {
-    label: 'Submarine cables',
-    detail: 'TeleGeography Submarine Cable Map',
-    href: 'https://www.submarinecablemap.com/',
-  },
-  {
-    label: 'Data centers',
-    detail: 'Data Center Map · Xalam Analytics',
-    href: 'https://www.datacentermap.com/',
-  },
-  {
-    label: 'Admin boundaries',
-    detail: 'Natural Earth · geoBoundaries',
-    href: 'https://www.naturalearthdata.com/',
-  },
-  {
-    label: 'Water stress',
-    detail: 'WRI Aqueduct',
-    href: 'https://www.wri.org/aqueduct',
-  },
-];
-
 interface Props {
   visibility: LayerVisibility;
 }
 
 export default function MapLegend({ visibility }: Props) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
 
   const anyVisible =
@@ -211,7 +180,7 @@ export default function MapLegend({ visibility }: Props) {
         </button>
 
         {sourcesOpen && (
-          <div className="border-t border-white/8 px-3.5 py-3 space-y-2">
+          <div className="max-h-[55vh] overflow-y-auto border-t border-white/8 px-3.5 py-3 space-y-2">
             {DATA_SOURCES.map((src) => (
               <a
                 key={src.label}
@@ -235,6 +204,7 @@ export default function MapLegend({ visibility }: Props) {
             <div className="mt-2 border-t border-white/5 pt-2 text-[8.5px] leading-relaxed text-slate-600">
               Data compiled from open sources. Values are indicative and may
               not reflect the most recent project updates.
+              <Link href="/sources" className="mt-2 block text-cyan-300 hover:underline">Read all source notes and limitations ↗</Link>
             </div>
           </div>
         )}

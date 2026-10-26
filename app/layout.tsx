@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+import './mapkwetu.css';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -17,11 +18,11 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('http://localhost:3000'),
-  title: 'Africa Power Atlas',
+  metadataBase: new URL('https://africapowergrid.vercel.app'),
+  title: 'MapKwetu',
   description:
-    "Interactive explorer of Africa's power plants, transmission lines, substations, data centers, submarine cables, and infrastructure risk overlays.",
-  applicationName: 'Africa Power Atlas',
+    "Explore Africa’s energy and digital infrastructure. Use the free MapKwetu atlas and prepare a brief for country research or a custom dashboard.",
+  applicationName: 'MapKwetu',
   keywords: [
     'Africa power grid',
     'energy infrastructure',
@@ -32,29 +33,25 @@ export const metadata: Metadata = {
     'geospatial dashboard',
   ],
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    icon: '/icon.svg',
   },
   openGraph: {
-    title: 'Africa Power Atlas',
+    title: 'MapKwetu',
     description: "Interactive visualization of Africa's energy infrastructure.",
-    images: [{ url: '/og-image.jpg' }],
     type: 'website',
     locale: 'en_US',
-    siteName: 'Africa Power Atlas',
+    siteName: 'MapKwetu',
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'Africa Power Atlas',
+    card: 'summary',
+    title: 'MapKwetu',
     description: "Interactive map of Africa's energy infrastructure",
-    images: ['/og-image.jpg'],
   },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
   themeColor: '#070912',
   colorScheme: 'dark',
 };
@@ -66,8 +63,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={`h-full dark ${inter.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
-      <body className="m-0 h-full w-full overflow-hidden p-0 antialiased">
-        <div id="app-root" className="relative h-screen w-screen overflow-hidden">
+      <body className="m-0 min-h-full w-full p-0 antialiased">
+        <div id="app-root" className="relative min-h-screen w-full">
           {children}
         </div>
       </body>

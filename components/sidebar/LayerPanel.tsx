@@ -385,7 +385,7 @@ export default function LayerPanel({
         <div className="flex-shrink-0 border-t border-white/6 px-4 py-2.5">
           <div className="flex items-center justify-between">
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Africa Power Atlas
+              MapKwetu
             </p>
             <span className="text-[9px] tabular-nums text-slate-600">v1.0</span>
           </div>

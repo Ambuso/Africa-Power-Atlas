@@ -1,250 +1,47 @@
-/* ==================== app/page.tsx ==================== */
-'use client';
-
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import dynamic from 'next/dynamic';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
-
-import LayerPanel from '@/components/sidebar/LayerPanel';
-import TopBar from '@/components/topbar/TopBar';
-import MapLegend from '@/components/map/MapLegend';
-import StatsPanel from '@/components/panels/StatsPanel';
-import LoadingScreen from '@/components/map/LoadingScreen';
-import { loadAndPreparePowerGridData } from '@/components/map/dataPrep';
-import { ALL_AFRICAN_ISO2, featureMatchesCountries, resolveIso2 } from '@/lib/countries';
-import type {
-  MapDataBundle,
-  LayerVisibility,
-  MapThemeKey,
-  ViewMode,
-} from '@/lib/types';
-
-// Map is dynamic (client-only, MapLibre requires window)
-const MapCanvas = dynamic(() => import('@/components/map/MapCanvas'), {
-  ssr: false,
-  loading: () => null,
-});
+import Link from 'next/link';
+import { ArrowUpRight, Check, Download, Layers3, MapPin, MoveUpRight, Radio, Waves, Zap } from 'lucide-react';
+import { SiteHeader, SiteFooter } from '@/components/marketing/Brand';
+import EnquiryForm from '@/components/marketing/EnquiryForm';
 
 export default function HomePage() {
-  /* ─── data ─── */
-  const [data, setData] = useState<Partial<MapDataBundle> | null>(null);
-  const [retryKey, setRetryKey] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  /* ─── loading flow state ─── */
-  // dataLoaded    → GeoJSON fetch completed
-  // mapReady      → MapCanvas has installed layers + pushed data + first paint happened
-  // loaderGone    → fade-out animation completed → we can unmount LoadingScreen
-  const [mapReady, setMapReady] = useState(false);
-  const [loaderGone, setLoaderGone] = useState(false);
-
-  /* ─── UI state ─── */
-  const [theme, setTheme] = useState<MapThemeKey>('dark');
-  const [viewMode, setViewMode] = useState<ViewMode>('points');
-  const [bubbleScale, setBubbleScale] = useState(1.0);
-
-  const [visibleLayers, setVisibleLayers] = useState<LayerVisibility>({
-    plants: true,
-    dataCenters: true,
-    transmission: true,
-    substations: false,
-    submarineCables: true,
-    plannedUpgrades: false,
-    waterStress: false,
-    admin0: true,
-    admin1: false,
-    admin2: false,
-    placeLabels: true,
-  });
-
-  const [renewableOnly, setRenewableOnly] = useState(false);
-  const [selectedFuels, setSelectedFuels] = useState<string[]>([]);
-  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-
-  /* ─── effects ─── */
-
-  const load = useCallback(() => setRetryKey((key) => key + 1), []);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoadError(null);
-    void loadAndPreparePowerGridData({
-      visibleLayers,
-      onLayerLoaded: (layer) => {
-        if (cancelled) return;
-        setData((current) => ({ ...current, ...layer }));
-        // Let people use the map while larger supporting layers load.
-        if (layer.plants) setLoading(false);
-      },
-    }).catch((error: unknown) => {
-      if (!cancelled) {
-        setLoadError(error instanceof Error ? error.message : 'Unable to load map data.');
-      }
-    }).finally(() => {
-      if (!cancelled) setLoading(false);
-    });
-    return () => { cancelled = true; };
-  }, [visibleLayers, retryKey]);
-
-  /* Safety net: if something gets stuck, still reveal the map after 8s */
-  useEffect(() => {
-    const t = setTimeout(() => setMapReady(true), 8000);
-    return () => clearTimeout(t);
-  }, []);
-
-  /* ─── handlers ─── */
-
-  const handleVisibilityChange = useCallback((key: keyof LayerVisibility) => {
-    setVisibleLayers((prev) => ({ ...prev, [key]: !prev[key] }));
-  }, []);
-
-  const handleToggleFuel = useCallback((fuel: string) => {
-    setSelectedFuels((prev) =>
-      prev.includes(fuel) ? prev.filter((f) => f !== fuel) : [...prev, fuel],
-    );
-  }, []);
-
-  const handleResetFuelFilter = useCallback(() => {
-    setSelectedFuels([]);
-    setRenewableOnly(false);
-  }, []);
-
-  const handleToggleCountry = useCallback((raw: string) => {
-    const iso2 = resolveIso2(raw) ?? raw;
-    setSelectedCountries((prev) =>
-      prev.includes(iso2) ? prev.filter((c) => c !== iso2) : [...prev, iso2],
-    );
-  }, []);
-
-  const handleSelectAllCountries = useCallback(
-    () => setSelectedCountries([...ALL_AFRICAN_ISO2]),
-    [],
-  );
-  const handleClearCountries = useCallback(() => setSelectedCountries([]), []);
-
-  const handleMapReady = useCallback(() => {
-    setMapReady(true);
-  }, []);
-
-  const handleLoaderFadeComplete = useCallback(() => {
-    setLoaderGone(true);
-  }, []);
-
-  /* ─── derived ─── */
-
-  const visiblePlantCount = useMemo(() => {
-    const plants = data?.plants?.plants?.features ?? [];
-    return plants.filter((f) => {
-      const renewable = f.properties?.renewable === true;
-      const fuel = f.properties?.fuel;
-      if (renewableOnly && !renewable) return false;
-      if (selectedFuels.length && !selectedFuels.includes(String(fuel))) return false;
-      if (!featureMatchesCountries(f.properties as any, selectedCountries)) return false;
-      return true;
-    }).length;
-  }, [data, renewableOnly, selectedFuels, selectedCountries]);
-
-  const totalGW = data?.plants?.totalGW ?? '0.0';
-  const totalPlants = data?.plants?.totalPlants ?? 0;
-
-  /* Loading is "truly ready" when BOTH data has arrived AND map has had
-   * its first paint. This keeps the loader on screen through the most
-   * expensive step (GeoJSON parsing + first GPU paint of thousands of points)
-   * so the user never sees a half-rendered globe.
-   */
-  const readyForFadeOut = !loading && mapReady;
-
+  const contactEmail = process.env.MAPKWETU_CONTACT_EMAIL || '';
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-[#070912] text-white">
-      {/* Map always mounts immediately so it can start fetching tiles
-          behind the loading screen */}
-      <MapCanvas
-        theme={theme}
-        visibleLayers={visibleLayers}
-        viewMode={viewMode}
-        data={data}
-        selectedFuels={selectedFuels}
-        renewableOnly={renewableOnly}
-        selectedCountries={selectedCountries}
-        bubbleScale={bubbleScale}
-        onMapReady={handleMapReady}
-      />
-
-      {/* Loading screen — fades out when readyForFadeOut, then unmounts */}
-      {!loaderGone && (
-        <LoadingScreen
-          ready={readyForFadeOut}
-          onFadeComplete={handleLoaderFadeComplete}
-        />
-      )}
-
-      <TopBar
-        selectedCountries={selectedCountries}
-        onToggleCountry={handleToggleCountry}
-        onSelectAllCountries={handleSelectAllCountries}
-        onClearCountries={handleClearCountries}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        bubbleScale={bubbleScale}
-        onBubbleScaleChange={setBubbleScale}
-        renewableOnly={renewableOnly}
-        onRenewableOnlyChange={setRenewableOnly}
-        totalGW={totalGW}
-        totalPlants={totalPlants}
-        visiblePlantCount={visiblePlantCount}
-        loading={loading}
-      />
-
-      <LayerPanel
-        theme={theme}
-        onThemeChange={setTheme}
-        visibility={visibleLayers}
-        onVisibilityChange={handleVisibilityChange}
-        techStats={data?.plants?.techStats ?? []}
-        renewableOnly={renewableOnly}
-        onRenewableOnlyChange={setRenewableOnly}
-        selectedFuels={selectedFuels}
-        onToggleFuel={handleToggleFuel}
-        onResetFuelFilter={handleResetFuelFilter}
-        totalPlants={totalPlants}
-        totalGW={totalGW}
-        visiblePlantCount={visiblePlantCount}
-      />
-
-      <StatsPanel
-        countryStats={data?.plants?.countryStats ?? []}
-        techStats={data?.plants?.techStats ?? []}
-        totalGW={totalGW}
-        selectedCountries={selectedCountries}
-        onCountryClick={handleToggleCountry}
-      />
-
-      <MapLegend visibility={visibleLayers} />
-
-      {loadError && (
-        <div className="absolute bottom-6 left-1/2 z-50 w-[min(92vw,520px)] -translate-x-1/2 rounded-[22px] border border-red-500/25 bg-slate-950/95 p-5 shadow-2xl backdrop-blur-xl animate-fade-in-up">
-          <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-500/10 text-red-300">
-              <AlertTriangle className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-red-300">Data load failed</div>
-              <div className="text-xs text-slate-400">
-                Some layers could not load. Available layers remain visible.
-              </div>
-            </div>
-          </div>
-          <p className="mb-4 text-sm leading-6 text-slate-300">{loadError}</p>
-          <button
-            onClick={load}
-            className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Retry
-          </button>
+    <main className="kw-site">
+      <SiteHeader />
+      <section className="kw-hero" aria-labelledby="hero-title">
+        <div className="kw-hero-copy">
+          <p className="kw-eyebrow"><span /> AFRICA, IN CONTEXT</p>
+          <h1 id="hero-title">See the connections.<br /><span>Find your next<br className="kw-desktop-break" /> starting point.</span></h1>
+          <p className="kw-hero-description">Power. Connectivity. Place. Explore the infrastructure shaping Africa, together on one map.</p>
+          <div className="kw-actions"><Link className="kw-button" href="/atlas">Explore the free atlas <ArrowUpRight size={18} /></Link><a className="kw-text-link" href="#research">For your next project <span aria-hidden="true">↓</span></a></div>
+          <div className="kw-hero-footnote"><span className="kw-tiny-map">↗</span><span>Open exploration. Sourced data.<br /><strong>A continent of possibilities.</strong></span></div>
         </div>
-      )}
+        <div className="kw-map-stage">
+          <div className="kw-map-heading"><span><span className="kw-status-dot" /> THE MAPKWETU ATLAS</span><span>01 / AFRICA</span></div>
+          <img className="kw-africa-art" src="/mapkwetu-atlas.svg" alt="Map of Africa showing country boundaries and power plant records from the atlas. Marker colours indicate fuel types." width="720" height="760" fetchPriority="high" />
+          <div className="kw-map-tag kw-map-tag-a"><Zap size={14} /><div>Energy networks<small>See what connects a region</small></div></div>
+          <div className="kw-map-tag kw-map-tag-b"><Waves size={14} /><div>Digital connections<small>Explore cable routes in the atlas</small></div></div>
+          <Link href="/atlas" className="kw-map-open" aria-label="Open the interactive atlas"><ArrowUpRight size={25} /></Link>
+          <div className="kw-map-caption">A view of the dataset · Natural Earth / WRI <Link href="/sources">Source notes ↗</Link></div>
+        </div>
+      </section>
+
+      <div className="kw-layer-strip" aria-label="Atlas layers"><span>ONE MAP.<br /><strong>MORE CONTEXT.</strong></span><span><Zap /> Power plants</span><span><Radio /> Grid & substations</span><span><Layers3 /> Data centres</span><span><Waves /> Subsea cables</span><span><MapPin /> Water stress</span></div>
+
+      <section id="research" className="kw-research" aria-labelledby="research-title">
+        <div className="kw-section-heading"><p className="kw-eyebrow">FROM EXPLORATION TO A CLEARER BRIEF</p><div><h2 id="research-title">Bring a place.<br />Bring a question.</h2><p>Start with the atlas. When your project needs more context, define a focused research brief for a country, a shortlist of locations, or a dashboard built around your work.</p></div></div>
+        <div className="kw-services">
+          <article><span className="kw-service-number">01 / COUNTRY CONTEXT</span><div className="kw-service-graphic kw-graphic-country"><span>KENYA</span><MapPin size={39} /><i /><i /><i /></div><h3>Understand the landscape.</h3><p>Scope a country briefing around generation, grid infrastructure, digital connections, and the gaps that need further research.</p><ul><li><Check /> Source notes and data dates</li><li><Check /> A focused list of research questions</li></ul><a href="#request">Prepare a country brief <ArrowUpRight size={17} /></a></article>
+          <article><span className="kw-service-number">02 / LOCATION COMPARISON</span><div className="kw-service-graphic kw-graphic-compare"><div><span>LOCATION A</span><i /><i /><i /></div><span>↔</span><div><span>LOCATION B</span><i /><i /><i /></div></div><h3>Ask better site questions.</h3><p>Frame a comparison of candidate locations, nearby infrastructure, and water context before detailed fieldwork or engineering studies.</p><ul><li><Check /> Your locations and requirements</li><li><Check /> Explicit assumptions and missing data</li></ul><a href="#request">Prepare a comparison brief <ArrowUpRight size={17} /></a></article>
+          <article><span className="kw-service-number">03 / CUSTOM DASHBOARDS</span><div className="kw-service-graphic kw-graphic-dashboard"><div><span /><span /><span /></div><div><i /><i /><i /><i /></div></div><h3>Make the map fit your work.</h3><p>Describe a dashboard that combines your permitted datasets with geographic context, filters, and views for your team.</p><ul><li><Check /> Your layers and workflows</li><li><Check /> A scope agreed before delivery</li></ul><a href="#request">Prepare a dashboard brief <ArrowUpRight size={17} /></a></article>
+        </div>
+        <p className="kw-service-note">Custom research and dashboards are scoped by enquiry. A brief is a starting point; scope, availability, fees, and delivery are agreed separately.</p>
+      </section>
+
+      <section className="kw-method" aria-labelledby="method-title"><div><p className="kw-eyebrow">KNOW WHAT YOU’RE LOOKING AT</p><h2 id="method-title">Good context starts<br />with honest data.</h2><Link className="kw-text-link" href="/sources">Read the source notes <ArrowUpRight size={18} /></Link></div><div className="kw-method-details"><p>The atlas brings together public datasets with different dates and levels of coverage. Its totals describe the records loaded into the map, rather than a complete current inventory of African infrastructure.</p><div><span>01</span><p><strong>Traceable sources</strong>See where each layer comes from and what it represents.</p></div><div><span>02</span><p><strong>Clear limits</strong>Nearby infrastructure does not establish connection access, available capacity, or project feasibility.</p></div><div><span>03</span><p><strong>A practical starting point</strong>Use the map to guide further research and conversations with local operators.</p></div></div></section>
+
+      <section className="kw-request" id="request" aria-labelledby="request-title"><div className="kw-request-copy"><p className="kw-eyebrow">LET’S MAKE IT SPECIFIC</p><h2 id="request-title">Your next project<br />starts with<br /><span>a good question.</span></h2><p>Tell us where you’re looking, what you’re trying to understand, and what a useful result would look like.</p><div className="kw-request-process"><span><MapPin size={18} /> Choose your focus</span><span><Download size={18} /> Keep a copy of your brief</span><span><MoveUpRight size={18} /> Agree the next step</span></div></div><EnquiryForm contactEmail={contactEmail} /></section>
+      <SiteFooter />
     </main>
   );
 }
