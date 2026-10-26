@@ -3,7 +3,6 @@ on:
   push:
     branches: [feat/energy-transition]
     paths:
-      - scripts/transition_probe.py
       - scripts/prepare_transition_data.py
       - .github/workflows/transition-data.yml
   workflow_dispatch:
@@ -18,4 +17,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python scripts/transition_probe.py
+      - name: Prepare verified source snapshots
+        run: python scripts/prepare_transition_data.py
+      - name: Validate published snapshots
+        run: python scripts/prepare_transition_data.py --validate-only
+      - name: Commit prepared snapshots
+        run: |
+          git add public/data/transition
+          if git diff --cached --quiet; then exit 0; fi
+          git -c user.name="MapKwetu data refresh" -c user.email="145032237+Ambuso@users.noreply.github.com" commit -m "Refresh verified African transition dataset snapshots"
+          git push origin HEAD:"$GITHUB_REF_NAME"
