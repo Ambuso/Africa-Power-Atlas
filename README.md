@@ -13,6 +13,8 @@ The repository retains its original `Africa-Power-Atlas` name. The product is br
 - `/`: MapKwetu introduction, research offerings, and project brief builder.
 - `/atlas`: the existing interactive infrastructure map, filters, and analytics.
 - `/sources`: dataset sources, coverage, methods, and limitations.
+- `/datasets`: transition dataset catalogue with source releases, coverage, download links, and map entry points.
+- `/transition`: searchable project table, country/status filters, three-record comparisons, source-linked exports, and an illustrative emissions scenario.
 
 The enquiry form always downloads a text brief on the visitor’s device. To also prepare an email draft addressed to your business, set `MAPKWETU_CONTACT_EMAIL` in `.env.local` and in the hosting environment, then rebuild. The address is intentionally shown to visitors through their mail client, so use a public business inbox. Without it, the form clearly states that it only downloads a brief and sends nothing. No visitor data is stored by this form, and no email is sent automatically. The visitor reviews and sends the prepared email in their email app.
 
@@ -105,3 +107,34 @@ npm run build        # production build
 ```
 
 GitHub Actions runs these checks for pushes and pull requests to `main`.
+
+## Energy transition data
+
+The committed `public/data/transition/` snapshots add:
+
+| Dataset | Source snapshot | African records | Published usable source coordinates |
+|---|---|---:|---:|
+| Hydrogen | IEA-derived research workbook dated 5 March 2025 | 112 | 107 |
+| Carbon capture / storage | IEA CCUS 2026 via pinned Policy Hub mirror | 11 | 0 |
+| Geothermal | GEM March 2026 via TU Berlin/PyPSA mirror | 71 generating units | 71 |
+| Power emissions | Climate TRACE API v7, annual 2025, CO₂e AR6 GWP100 | 431 | 431 |
+
+These are source snapshots, not claims of current verified operation or complete African coverage. Hydrogen output values can be source-normalised estimates. Geothermal generating units are distinct from plant sites. Capture, storage, and full-chain capacities can overlap and are not added as unique captured carbon. The older power-plant layer and transition layers remain separate to avoid double counting.
+
+Country/state anchors from the CCUS mirror are deliberately excluded from facility pins. The map instead shows labelled country areas for unlocated records, while keeping every source record searchable in the workspace. Country and project-status filters apply to transition layers. Dataset/record links can enter the atlas with `?dataset=hydrogen&country=KEN&record=hydrogen:123`.
+
+The emissions scenario uses only the selected country's retained 2025 power-sector inventory records (or all represented countries). It applies `baseline * (1 + activity_change / 100) * (1 - reduction / 100)`. It is a user-assumption calculation, not a validated forecast or an estimate of measured avoided emissions. Source activity/capacity fields labelled license-restricted are not republished.
+
+Refresh all four snapshots with Python 3 and network access:
+
+```bash
+python3 scripts/prepare_transition_data.py
+python3 scripts/prepare_transition_data.py --validate-only
+python3 -m unittest discover -s tests -p 'test_*.py'
+```
+
+No third-party Python packages are required. The importer validates source schemas and all four datasets before writing; failures do not replace prior data with empty successes. `manifest.json` records exact download URLs, source dates, retrieval time, checksums, mapped counts, coverage, and limitations. The Transition data preparation Action can also be run manually; no recurring schedule is enabled.
+
+The comparison shortlist is stored only in the visitor's browser. CSV exports include source attribution and escape formula-like cells. Scenario exports preserve the baseline scope, inputs, units, method, and source snapshot.
+
+CI runs the Node and Python regression checks, validates committed snapshots, checks TypeScript, builds production, and exercises catalogue loading, filtering, comparisons, exports, map entry, and mobile layout in an isolated Chromium test runner. Browser screenshots are uploaded as a workflow artifact.

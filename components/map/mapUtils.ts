@@ -86,6 +86,7 @@ export async function loadAndPreparePowerGridData(): Promise<MapDataBundle> {
   };
 
   return {
+    hydrogen: emptyFC, carbonCapture: emptyFC, geothermal: emptyFC, emissions: emptyFC,
     plants: emptyPlantBundle,
     transmission: emptyFC,        // ← changed from null
     substations: emptyFC,         // ← changed from null

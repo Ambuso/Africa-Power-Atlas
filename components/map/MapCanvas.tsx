@@ -46,6 +46,9 @@ import {
 } from './mapStyles';
 import { fuelColors, colorForFuel } from './fuelColors';
 import { featureMatchesCountries } from '@/lib/countries';
+import { TRANSITION_KEYS, type TransitionProperties } from '@/lib/transition';
+import { prepareTransitionMapData } from './transitionMapData';
+import TransitionPopup from './TransitionPopup';
 import { Zap, Database, X } from 'lucide-react';
 
 /* ─────────── SDF diamond icon ─────────── */
@@ -95,6 +98,8 @@ interface Props {
   bubbleScale?: number;
   /** Called once when style is loaded & data has been pushed to sources. */
   onMapReady?: () => void;
+  focusRecord?: string;
+  transitionStatus?: string;
 }
 
 type PopupKind = 'plant' | 'datacenter';
@@ -138,6 +143,8 @@ export default function MapCanvas({
   selectedCountries = [],
   bubbleScale = 1.2,
   onMapReady,
+  focusRecord,
+  transitionStatus = 'all',
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -155,6 +162,7 @@ export default function MapCanvas({
   }, [onMapReady]);
 
   const [popup, setPopup] = useState<PopupData | null>(null);
+  const [transitionPopup, setTransitionPopup] = useState<TransitionProperties | null>(null);
 
   /* ─ filtering ─ */
   const filteredPlants = useMemo<PlantFeatureCollection>(() => {
@@ -177,6 +185,40 @@ export default function MapCanvas({
 
     return { type: 'FeatureCollection', features } as PlantFeatureCollection;
   }, [data?.plants, renewableOnly, selectedFuels, selectedCountries]);
+
+  const transitionData = useMemo(() => Object.fromEntries(TRANSITION_KEYS.map((key) => [key, prepareTransitionMapData(key, data?.[key], data?.admin0, selectedCountries, transitionStatus)])), [data?.hydrogen, data?.carbonCapture, data?.geothermal, data?.emissions, data?.admin0, selectedCountries, transitionStatus]);
+  const transitionDataRef = useRef(transitionData);
+  const focusRecordRef = useRef(focusRecord);
+  const focusedRecordRef = useRef<string | undefined>(undefined);
+  useEffect(() => { transitionDataRef.current = transitionData; }, [transitionData]);
+  useEffect(() => { focusRecordRef.current = focusRecord; }, [focusRecord]);
+  const focusTransitionRecord = useCallback((map: maplibregl.Map) => {
+    const identifier = focusRecordRef.current;
+    if (!identifier || focusedRecordRef.current === identifier) return;
+    for (const collection of Object.values(transitionDataRef.current)) {
+      const feature = collection.features.find((record) => record.properties.id === identifier);
+      if (feature?.geometry?.type === 'Point') {
+        map.easeTo({ center: feature.geometry.coordinates as [number, number], zoom: 6, duration: 800 });
+        focusedRecordRef.current = identifier;
+        return;
+      }
+    }
+    const raw = TRANSITION_KEYS.flatMap((key) => dataRef.current?.[key]?.features || []).find((feature) => feature.properties.id === identifier);
+    const summary = Object.values(transitionDataRef.current).flatMap((collection) => collection.features).find((feature) => feature.properties.record_kind === 'country_summary' && feature.properties.iso3 === raw?.properties.iso3);
+    if (summary?.geometry && (summary.geometry.type === 'Polygon' || summary.geometry.type === 'MultiPolygon')) {
+      const points: Array<[number, number]> = [];
+      const collect = (value: unknown) => {
+        if (!Array.isArray(value)) return;
+        if (typeof value[0] === 'number' && typeof value[1] === 'number') points.push([value[0], value[1]]);
+        else value.forEach(collect);
+      };
+      collect(summary.geometry.coordinates);
+      if (!points.length) return;
+      const bounds: [[number, number], [number, number]] = [[Math.min(...points.map((point) => point[0])), Math.min(...points.map((point) => point[1]))], [Math.max(...points.map((point) => point[0])), Math.max(...points.map((point) => point[1]))]];
+      map.fitBounds(bounds, { padding: 80, maxZoom: 5, duration: 800 });
+      focusedRecordRef.current = identifier;
+    }
+  }, []);
 
   /* ─ refs that mirror state ─ */
   const dataRef = useRef(data);
@@ -370,7 +412,9 @@ export default function MapCanvas({
     updateSourceData(map, SOURCE_IDS.admin1, d?.admin1 ?? null);
     updateSourceData(map, SOURCE_IDS.admin2, d?.admin2 ?? null);
     updateSourceData(map, SOURCE_IDS.placeLabels, d?.placeLabels ?? null);
-  }, []);
+    for (const key of TRANSITION_KEYS) updateSourceData(map, SOURCE_IDS[key], transitionDataRef.current[key]);
+    focusTransitionRecord(map);
+  }, [focusTransitionRecord]);
 
   /** The plants source is created clustered; only Cluster mode should group
    *  points, otherwise Points mode hides most plants below zoom 5. */
@@ -394,6 +438,19 @@ export default function MapCanvas({
       map.getCanvas().style.cursor = '';
     };
 
+    for (const key of TRANSITION_KEYS) {
+      for (const layer of [LAYER_IDS[key], `${LAYER_IDS[key]}-areas`]) {
+        map.on('mouseenter', layer, onPointerEnter);
+        map.on('mouseleave', layer, onPointerLeave);
+        map.on('click', layer, (event: any) => {
+          const properties = event.features?.[0]?.properties;
+          if (!properties) return;
+          setPopup(null);
+          setTransitionPopup(properties as TransitionProperties);
+        });
+      }
+    }
+
     map.on('mouseenter', LAYER_IDS.plants, onPointerEnter);
     map.on('mouseleave', LAYER_IDS.plants, onPointerLeave);
     map.on('mouseenter', LAYER_IDS.plantsDiamond, onPointerEnter);
@@ -404,6 +461,7 @@ export default function MapCanvas({
     map.on('mouseleave', LAYER_IDS.dataCenters, onPointerLeave);
 
     const plantClickHandler = (e: any) => {
+      setTransitionPopup(null);
       const f = e.features?.[0];
       if (!f || !f.geometry || f.geometry.type !== 'Point') return;
 
@@ -431,6 +489,7 @@ export default function MapCanvas({
     map.on('click', LAYER_IDS.plantsDiamond, plantClickHandler);
 
     map.on('click', LAYER_IDS.dataCenters, (e) => {
+      setTransitionPopup(null);
       const f = e.features?.[0];
       if (!f || !f.geometry || f.geometry.type !== 'Point') return;
 
@@ -492,9 +551,10 @@ export default function MapCanvas({
           LAYER_IDS.plantsDiamond,
           LAYER_IDS.plantsClusters,
           LAYER_IDS.dataCenters,
+          ...TRANSITION_KEYS.flatMap((key) => [LAYER_IDS[key], `${LAYER_IDS[key]}-areas`]),
         ],
       });
-      if (!hits.length) setPopup(null);
+      if (!hits.length) { setPopup(null); setTransitionPopup(null); }
     });
   }, []);
 
@@ -629,7 +689,7 @@ export default function MapCanvas({
     // Progressive loading should not reparse unchanged large GeoJSON sources.
     const keys = Object.keys(SOURCE_IDS) as Array<keyof MapDataBundle>;
     for (const key of keys) {
-      if (key === 'plants') continue;
+      if (key === 'plants' || TRANSITION_KEYS.some((transition) => transition === key)) continue;
       if (data?.[key] !== previousSupportingData.current?.[key]) {
         updateSourceData(map, SOURCE_IDS[key], data?.[key] ?? null);
       }
@@ -663,6 +723,13 @@ export default function MapCanvas({
     applyLayerVisibility(map, visibleLayers, viewMode);
   }, [visibleLayers, viewMode, syncPlantClustering]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isStyleLoaded.current) return;
+    for (const key of TRANSITION_KEYS) updateSourceData(map, SOURCE_IDS[key], transitionData[key]);
+    focusTransitionRecord(map);
+  }, [transitionData, focusRecord, focusTransitionRecord]);
+
   const isDataCenter = popup?.kind === 'datacenter';
   const accentColor = isDataCenter
     ? '#67e8f9'
@@ -673,6 +740,8 @@ export default function MapCanvas({
   return (
     <div className="absolute inset-0 h-full w-full">
       <div ref={containerRef} className="absolute inset-0 h-full w-full" />
+
+      {transitionPopup && <TransitionPopup record={transitionPopup} onClose={() => setTransitionPopup(null)} />}
 
       {popup && (
         <div className="pointer-events-auto absolute bottom-24 left-1/2 z-30 w-[min(92vw,360px)] -translate-x-1/2 overflow-hidden rounded-[20px] panel-surface animate-fade-in-up">

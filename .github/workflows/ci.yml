@@ -11,7 +11,8 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,5 +21,23 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - run: python3 -m unittest discover -s tests -p 'test_*.py'
+      - run: python3 scripts/prepare_transition_data.py --validate-only
       - run: npm run typecheck
       - run: npm run build
+      - name: Install isolated browser test runner
+        if: github.event_name == 'pull_request'
+        run: |
+          npm install --prefix /tmp/mapkwetu-browser --no-audit --no-fund playwright@1.56.1
+          /tmp/mapkwetu-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Exercise the production website
+        if: github.event_name == 'pull_request'
+        env:
+          MAPKWETU_BROWSER_MODULE: /tmp/mapkwetu-browser/node_modules/playwright
+        run: node tests/browser-smoke.cjs
+      - uses: actions/upload-artifact@v4
+        if: always() && github.event_name == 'pull_request'
+        with:
+          name: mapkwetu-browser-screenshots
+          path: artifacts/browser
+          if-no-files-found: ignore

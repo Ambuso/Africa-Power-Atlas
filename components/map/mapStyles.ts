@@ -11,10 +11,12 @@
 
 import type { Map as MapLibreMap, GeoJSONSource } from 'maplibre-gl';
 import type { FeatureCollection, LayerVisibility, ViewMode } from '@/lib/types';
+import { TRANSITION_KEYS, TRANSITION_DATASETS } from '@/lib/transition';
 
 /* ─────────── IDs ─────────── */
 
 export const SOURCE_IDS = {
+  hydrogen: 'hydrogen-src', carbonCapture: 'carbon-capture-src', geothermal: 'geothermal-src', emissions: 'emissions-src',
   plants: 'plants-src',
   transmission: 'transmission-src',
   substations: 'substations-src',
@@ -29,6 +31,7 @@ export const SOURCE_IDS = {
 } as const;
 
 export const LAYER_IDS = {
+  hydrogen: 'hydrogen-circle', carbonCapture: 'carbon-capture-circle', geothermal: 'geothermal-circle', emissions: 'emissions-circle',
   waterStress: 'water-stress-fill',
   admin2: 'admin2-line',
   admin1: 'admin1-line',
@@ -143,6 +146,23 @@ export function installMapDataLayers(map: MapLibreMap) {
   ensureSource(map, SOURCE_IDS.placeLabels);
 
   const beforeLabels = firstSymbolId(map);
+  for (const key of TRANSITION_KEYS) {
+    ensureSource(map, SOURCE_IDS[key]);
+    ensureLayer(map, {
+      id: `${LAYER_IDS[key]}-areas`, type: 'fill', source: SOURCE_IDS[key],
+      filter: ['==', ['get', 'record_kind'], 'country_summary'], layout: { visibility: 'none' },
+      paint: { 'fill-color': TRANSITION_DATASETS[key].color, 'fill-opacity': 0.15, 'fill-outline-color': TRANSITION_DATASETS[key].color },
+    }, beforeLabels);
+    ensureLayer(map, {
+      id: LAYER_IDS[key], type: 'circle', source: SOURCE_IDS[key],
+      filter: ['==', ['geometry-type'], 'Point'], layout: { visibility: 'none' },
+      paint: {
+        'circle-color': TRANSITION_DATASETS[key].color,
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 2, 4, 6, 7, 12, 11],
+        'circle-stroke-color': '#f8fafc', 'circle-stroke-width': 1, 'circle-opacity': 0.9,
+      },
+    }, beforeLabels);
+  }
 
   /* ── water stress ── */
   ensureLayer(
@@ -828,6 +848,10 @@ export function applyLayerVisibility(
     [LAYER_IDS.placeLabel]: v.placeLabels,
   };
 
+  for (const key of TRANSITION_KEYS) {
+    visibilityMap[LAYER_IDS[key]] = Boolean(v[key]);
+    visibilityMap[`${LAYER_IDS[key]}-areas`] = Boolean(v[key]);
+  }
   for (const [id, visible] of Object.entries(visibilityMap)) {
     if (map.getLayer(id)) {
       map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
@@ -903,3 +927,4 @@ export function maybeApplyAtmosphere(map: MapLibreMap, light = false) {
     }
   } catch {}
 }
+

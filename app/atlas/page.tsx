@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { isTransitionDataset } from '@/lib/transition';
 
 import LayerPanel from '@/components/sidebar/LayerPanel';
 import TopBar from '@/components/topbar/TopBar';
@@ -29,6 +30,7 @@ export default function HomePage() {
   /* ─── data ─── */
   const [data, setData] = useState<Partial<MapDataBundle> | null>(null);
   const [retryKey, setRetryKey] = useState(0);
+  const [initialFiltersReady, setInitialFiltersReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -44,7 +46,10 @@ export default function HomePage() {
   const [viewMode, setViewMode] = useState<ViewMode>('points');
   const [bubbleScale, setBubbleScale] = useState(1.0);
 
+  const [focusRecord, setFocusRecord] = useState<string | undefined>();
+  const [transitionStatus, setTransitionStatus] = useState('all');
   const [visibleLayers, setVisibleLayers] = useState<LayerVisibility>({
+    hydrogen: false, carbonCapture: false, geothermal: false, emissions: false,
     plants: true,
     dataCenters: true,
     transmission: true,
@@ -63,10 +68,22 @@ export default function HomePage() {
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
 
   /* ─── effects ─── */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const dataset = params.get('dataset');
+    if (isTransitionDataset(dataset)) setVisibleLayers((current) => ({ ...current, plants: false, dataCenters: false, submarineCables: false, transmission: false, [dataset]: true }));
+    const iso2 = resolveIso2(params.get('country'));
+    if (iso2) setSelectedCountries([iso2]);
+    setFocusRecord(params.get('record') || undefined);
+    setTransitionStatus(params.get('status') || 'all');
+    setInitialFiltersReady(true);
+  }, []);
+
 
   const load = useCallback(() => setRetryKey((key) => key + 1), []);
 
   useEffect(() => {
+    if (!initialFiltersReady) return;
     let cancelled = false;
     setLoadError(null);
     void loadAndPreparePowerGridData({
@@ -85,7 +102,7 @@ export default function HomePage() {
       if (!cancelled) setLoading(false);
     });
     return () => { cancelled = true; };
-  }, [visibleLayers, retryKey]);
+  }, [visibleLayers, retryKey, initialFiltersReady]);
 
   /* Safety net: if something gets stuck, still reveal the map after 8s */
   useEffect(() => {
@@ -134,6 +151,7 @@ export default function HomePage() {
   /* ─── derived ─── */
 
   const visiblePlantCount = useMemo(() => {
+    if (!visibleLayers.plants) return 0;
     const plants = data?.plants?.plants?.features ?? [];
     return plants.filter((f) => {
       const renewable = f.properties?.renewable === true;
@@ -143,7 +161,7 @@ export default function HomePage() {
       if (!featureMatchesCountries(f.properties as any, selectedCountries)) return false;
       return true;
     }).length;
-  }, [data, renewableOnly, selectedFuels, selectedCountries]);
+  }, [data, renewableOnly, selectedFuels, selectedCountries, visibleLayers.plants]);
 
   const totalGW = data?.plants?.totalGW ?? '0.0';
   const totalPlants = data?.plants?.totalPlants ?? 0;
@@ -169,6 +187,8 @@ export default function HomePage() {
         selectedCountries={selectedCountries}
         bubbleScale={bubbleScale}
         onMapReady={handleMapReady}
+        focusRecord={focusRecord}
+        transitionStatus={transitionStatus}
       />
 
       {/* Loading screen — fades out when readyForFadeOut, then unmounts */}
@@ -198,6 +218,8 @@ export default function HomePage() {
 
       <LayerPanel
         theme={theme}
+        transitionStatus={transitionStatus}
+        onTransitionStatusChange={setTransitionStatus}
         onThemeChange={setTheme}
         visibility={visibleLayers}
         onVisibilityChange={handleVisibilityChange}

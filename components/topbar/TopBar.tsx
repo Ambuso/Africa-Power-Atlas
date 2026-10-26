@@ -258,8 +258,8 @@ export default function TopBar({
               Renewable
             </button>
 
-            <Link href="/#request" className="hidden rounded-full border border-cyan-400/25 px-3 py-1.5 text-[11px] font-medium text-cyan-200 transition hover:bg-cyan-400/10 xl:inline-flex">
-              Research brief ↗
+            <Link href="/transition" className="hidden rounded-full border border-cyan-400/25 px-3 py-1.5 text-[11px] font-medium text-cyan-200 transition hover:bg-cyan-400/10 xl:inline-flex">
+              Transition workspace ↗
             </Link>
 
             {/* Bubble slider */}
@@ -303,3 +303,4 @@ function Stat({ label, value, accent }: { label: string; value: string; accent: 
 function Divider() {
   return <span className="h-3 w-px bg-white/10" />;
 }
+

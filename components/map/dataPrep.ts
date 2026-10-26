@@ -452,6 +452,10 @@ async function fetchFirstAvailable(
 /* ─────────── main loader ─────────── */
 
 const urlCandidates = {
+    hydrogen: ['/data/transition/hydrogen.geojson'],
+    carbonCapture: ['/data/transition/carbon-capture.geojson'],
+    geothermal: ['/data/transition/geothermal.geojson'],
+    emissions: ['/data/transition/emissions.geojson'],
     plants: [
       '/data/plants/africa_power_plants.geojson',
     ],
@@ -503,6 +507,7 @@ type LayerKey = keyof MapDataBundle;
 const preparedLayers = new Map<LayerKey, Promise<MapDataBundle[LayerKey]>>();
 
 const prepareLayer: { [K in LayerKey]: (raw: FeatureCollection) => MapDataBundle[K] } = {
+  hydrogen: passThroughFC, carbonCapture: passThroughFC, geothermal: passThroughFC, emissions: passThroughFC,
   plants: preparePowerPlants,
   transmission: prepareTransmission,
   substations: prepareSubstations,
@@ -545,7 +550,7 @@ export async function loadAndPreparePowerGridData({
     if (!visibleLayers || key === 'plants') return true;
     // Country and province labels use these sources independently of boundary toggles.
     if (key === 'admin0' || key === 'admin1') {
-      return visibleLayers[key] || visibleLayers.placeLabels;
+      return visibleLayers[key] || visibleLayers.placeLabels || (key === 'admin0' && (visibleLayers.hydrogen || visibleLayers.carbonCapture));
     }
     return visibleLayers[key];
   });
