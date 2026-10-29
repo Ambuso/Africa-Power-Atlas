@@ -22,7 +22,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import maplibregl, { type ExpressionSpecification } from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
+import type { ExpressionSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type {
   MapDataBundle,
@@ -331,7 +332,7 @@ export default function MapCanvas({
   };
 
   const setOpacity = useCallback(
-    (map: maplibregl.Map, layerId: string, prop: string, value: number) => {
+    (map: maplibregl.Map, layerId: string, prop: 'circle-opacity' | 'line-opacity' | 'fill-opacity' | 'heatmap-opacity' | 'raster-opacity' | 'text-opacity' | 'icon-opacity', value: number) => {
       if (!map.getLayer(layerId)) return;
       try {
         map.setPaintProperty(layerId, prop, clampOpacity(value));

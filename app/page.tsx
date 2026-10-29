@@ -1,29 +1,45 @@
 import Link from 'next/link';
-import { ArrowUpRight, Check, Download, Layers3, MapPin, MoveUpRight, Radio, Waves, Zap } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Check, ChevronRight, Download, Globe2, Layers3, MapPin, MoveUpRight, Radio, Search, Waves, Zap } from 'lucide-react';
 import { SiteHeader, SiteFooter } from '@/components/marketing/Brand';
 import EnquiryForm from '@/components/marketing/EnquiryForm';
 
 export default function HomePage() {
   const contactEmail = process.env.MAPKWETU_CONTACT_EMAIL || '';
   return (
-    <main className="kw-site">
+    <main className="kw-site kw-home">
       <SiteHeader />
       <section className="kw-hero" aria-labelledby="hero-title">
         <div className="kw-hero-copy">
-          <p className="kw-eyebrow"><span /> AFRICA, IN CONTEXT</p>
-          <h1 id="hero-title">See the connections.<br /><span>Find your next<br className="kw-desktop-break" /> starting point.</span></h1>
-          <p className="kw-hero-description">Check a location against Africa’s energy and digital infrastructure. Get nearby records, water context, and the questions that still need answers.</p>
-          <div className="kw-actions"><Link className="kw-button" href="/site-check">Run a free Site Check <ArrowUpRight size={18} /></Link><a className="kw-text-link" href="#research">For your next project <span aria-hidden="true">↓</span></a></div>
-          <div className="kw-hero-footnote"><span className="kw-tiny-map">↗</span><span>Open exploration. Sourced data.<br /><strong>A continent of possibilities.</strong></span></div>
+          <Link className="kw-announcement" href="/intelligence"><span>New</span> Introducing Atlas Intelligence <ArrowRight size={14} /></Link>
+          <h1 id="hero-title">Better context.<br /><span>For Africa’s energy future.</span></h1>
+          <p className="kw-hero-description">Screen Kenyan project locations. Compare infrastructure.<br className="kw-desktop-break" /> Know what to investigate next.</p>
+          <div className="kw-actions"><Link className="kw-button" href="/intelligence">Open Atlas Intelligence <ArrowRight size={16} /></Link><Link className="kw-text-link" href="/atlas">Explore Africa’s atlas <ChevronRight size={15} /></Link></div>
+          <p className="kw-hero-assurance">Free to explore <span>·</span> Public data <span>·</span> Traceable sources</p>
         </div>
-        <div className="kw-map-stage">
-          <div className="kw-map-heading"><span><span className="kw-status-dot" /> THE MAPKWETU ATLAS</span><span>01 / AFRICA</span></div>
-          <img className="kw-africa-art" src="/mapkwetu-atlas.svg" alt="Map of Africa showing country boundaries and power plant records from the atlas. Marker colours indicate fuel types." width="720" height="760" fetchPriority="high" />
-          <div className="kw-map-tag kw-map-tag-a"><Zap size={14} /><div>Energy networks<small>See what connects a region</small></div></div>
-          <div className="kw-map-tag kw-map-tag-b"><Waves size={14} /><div>Digital connections<small>Explore cable routes in the atlas</small></div></div>
-          <Link href="/atlas" className="kw-map-open" aria-label="Open the interactive atlas"><ArrowUpRight size={25} /></Link>
-          <div className="kw-map-caption">A view of the dataset · Natural Earth / WRI <Link href="/sources">Source notes ↗</Link></div>
+        <div className="kw-product-preview">
+          <div className="kw-preview-toolbar"><div className="kw-window-dots" aria-hidden="true"><i /><i /><i /></div><span><Globe2 size={12} /> MapKwetu Atlas</span><Link href="/atlas">Open workspace <ArrowUpRight size={13} /></Link></div>
+          <div className="kw-preview-body">
+            <aside className="kw-preview-sidebar" aria-label="Preview atlas layers">
+              <div className="kw-preview-brand"><Globe2 size={19} /> MapKwetu <span>ATLAS</span></div>
+              <Link href="/atlas" className="kw-preview-search"><Search size={13} /> Explore a location <span>↗</span></Link>
+              <p className="kw-preview-label">YOUR LAYERS</p>
+              <Link href="/atlas" className="kw-preview-layer kw-preview-layer-active"><Zap size={15} /><span>Power plants</span><i /></Link>
+              <Link href="/atlas" className="kw-preview-layer"><Radio size={15} /><span>Grid & substations</span><i /></Link>
+              <Link href="/atlas" className="kw-preview-layer"><Layers3 size={15} /><span>Data centres</span><i /></Link>
+              <Link href="/atlas" className="kw-preview-layer"><Waves size={15} /><span>Subsea cables</span><i /></Link>
+              <div className="kw-preview-sidebar-note"><span className="kw-status-dot" /> A continent, in context.<p>Explore the connections.<br />Understand the possibilities.</p><Link href="/sources">View source notes <ArrowUpRight size={12} /></Link></div>
+            </aside>
+            <div className="kw-map-stage">
+              <div className="kw-map-heading"><span><span className="kw-status-dot" /> AFRICA / INFRASTRUCTURE</span><span>ATLAS PREVIEW</span></div>
+              <img className="kw-africa-art" src="/mapkwetu-atlas.svg" alt="Atlas preview of Africa with country boundaries and power plant records. Marker colours indicate fuel types." width="720" height="760" fetchPriority="high" />
+              <div className="kw-preview-coordinate">0° 00′ N &nbsp; 20° 00′ E</div>
+              <Link href="/site-check" className="kw-map-tag kw-map-tag-a"><span className="kw-preview-pin"><MapPin size={16} /></span><div>A better place to begin<small>Check the context around your site</small></div><ArrowUpRight size={14} /></Link>
+              <Link href="/atlas" className="kw-map-open" aria-label="Open the interactive atlas"><ArrowUpRight size={20} /></Link>
+              <div className="kw-map-caption"><span><i /> Power plant records</span><Link href="/sources">Natural Earth / WRI ↗</Link></div>
+            </div>
+          </div>
         </div>
+        <div className="kw-preview-under"><span>THE BIGGER PICTURE STARTS HERE</span><span>One place to connect the dots. <ArrowRight size={13} /></span></div>
       </section>
 
       <div className="kw-layer-strip" aria-label="Atlas layers"><span>ONE MAP.<br /><strong>MORE CONTEXT.</strong></span><span><Zap /> Power plants</span><span><Radio /> Grid & substations</span><span><Layers3 /> Data centres</span><span><Waves /> Subsea cables</span><span><MapPin /> Water stress</span></div>

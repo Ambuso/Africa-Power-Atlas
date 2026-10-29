@@ -10,7 +10,8 @@ The repository retains its original `Africa-Power-Atlas` name. The product is br
 
 ## Pages and enquiries
 
-- `/`: MapKwetu introduction, research offerings, and project brief builder.
+- `/`: Atlas Intelligence introduction, research offerings, and project brief builder.
+- `/intelligence`: Kenya screening workspace, browser-local five-site shortlist, source-aware comparison, and downloadable text research briefs.
 - `/atlas`: the existing interactive infrastructure map, filters, and analytics.
 - `/sources`: dataset sources, coverage, methods, and limitations.
 - `/datasets`: transition dataset catalogue with source releases, coverage, download links, and map entry points.
@@ -21,6 +22,16 @@ The enquiry form always downloads a text brief on the visitor’s device. To als
 Research and custom dashboards are offered by enquiry. This release does not implement subscriptions, payment collection, customer accounts, or an automated report-delivery service.
 
 The homepage illustration is generated from the committed Natural Earth boundaries and WRI plant records. It represents that dataset rather than complete current infrastructure coverage. To regenerate it after refreshing the data, run `python scripts/build_marketing_map.py`.
+
+## Atlas Intelligence: first product milestone
+
+Open `/intelligence` to screen a Kenyan project location using the existing Site Check API. Enter exact coordinates and a 10, 25, 50 or 100 km radius, inspect nearby records and provenance, then save up to five candidates for comparison. Starter city coordinates are approximate exploration aids. Country boundaries enforce Kenya coverage after screening.
+
+Shortlists remain in the current browser’s local storage; they are not shared accounts or cloud project records. Brief exports are text files containing source URLs, snapshot fingerprints, dates, distances, methods and outstanding verification questions. Existing Site Check PDF sign-ups still require configured private lead storage.
+
+`npm run dev` and `npm run build` prepare the screening index automatically. Country boundaries and the plant snapshot are required. Missing grid, substation, digital, water and city snapshots are treated as explicit coverage gaps. The available snapshots in this checkout do **not** support grid-capacity, solar-yield, protected-area, terrain or suitability claims. Populate and validate those layers before offering those capabilities to pilot customers.
+
+The first commercial workflow to validate is a Kenyan renewable developer’s candidate-site research brief. This milestone implements the screening and comparison workflow; subscriptions, billing, organization accounts and verified operator capacity data are not implemented.
 
 ## Architecture
 

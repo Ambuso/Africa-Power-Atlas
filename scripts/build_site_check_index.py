@@ -52,17 +52,21 @@ def numeric(value):
 
 def main():
     base = ROOT / 'public/data'; digest = hashlib.sha256(); prepared = datetime.now(timezone.utc).isoformat()
-    def read(relative):
+    def read(relative, optional=False):
+        if optional and not (base / relative).exists():
+            digest.update(('unavailable:' + relative).encode())
+            print(relative, 'unavailable; retaining an explicit coverage gap')
+            return []
         raw = (base / relative).read_bytes(); digest.update(raw); data = json.loads(raw)
         if data.get('type') != 'FeatureCollection' or not isinstance(data.get('features'), list): raise ValueError(relative + ': invalid FeatureCollection')
         return data['features']
-    countries = read('admin/africa_admin0.geojson'); water = read('context/africa_water_stress.geojson'); places = read('admin/africa_places.geojson')
+    countries = read('admin/africa_admin0.geojson'); water = read('context/africa_water_stress.geojson', optional=True); places = read('admin/africa_places.geojson', optional=True)
     telecom_path = base / 'site-check/telecom-manifest.json'
     telecom = json.loads(telecom_path.read_text()) if telecom_path.exists() else None
     layers = {}
     for key, (relative, name, release, url, note) in LAYERS.items():
         available = (base / relative).exists()
-        if not available and key not in {'landingStations', 'fibreRoutes'}: raise FileNotFoundError(relative)
+        if not available and key == 'plants': raise FileNotFoundError(relative)
         features = read(relative) if available else []
         if not available: digest.update(('unavailable:' + relative).encode())
         assets = []; omitted = 0
@@ -75,7 +79,7 @@ def main():
             voltage_unit = 'V' if key == 'substations' else 'kV' if key == 'transmission' and p.get('status') else 'unknown'
             accuracy = p.get('accuracy') or ('Curated coordinate; may be approximate' if key == 'dataCentres' else 'Published source geometry; accuracy not recorded')
             assets.append({'id': str(p.get('id') or feature.get('id') or f'{key}:{index}'), 'name': str(p.get('name') or 'Unnamed mapped record'), 'geometry': geometry, 'sphere': sphere, 'country': str(p.get('country_long') or p.get('country') or 'Not reported'), 'fuel': str(p.get('primary_fuel') or p.get('fuel') or p.get('technology') or ''), 'capacityMW': numeric(p.get('capacity_mw')), 'voltageRaw': '' if raw_voltage is None else str(raw_voltage), 'voltageUnit': voltage_unit, 'status': str(p.get('status') or 'Not reported / not independently verified'), 'accuracy': accuracy, 'sourceUrl': p.get('source_url') or url})
-        layers[key] = {'source': {'name': name, 'release': release or ('OSM extraction ' + telecom['extracted_at'][:10] if telecom and available else 'Source snapshot unavailable'), 'url': url, 'count': len(assets), 'omitted': omitted, 'note': note if available else 'No source snapshot has been acquired yet. This is a coverage gap, not evidence that infrastructure is absent.'}, 'assets': assets}
+        layers[key] = {'source': {'name': name, 'release': ('Source snapshot unavailable' if not available else release) or ('OSM extraction ' + telecom['extracted_at'][:10] if telecom and available else 'Source snapshot unavailable'), 'url': url, 'count': len(assets), 'omitted': omitted, 'note': note if available else 'No source snapshot has been acquired yet. This is a coverage gap, not evidence that infrastructure is absent.'}, 'assets': assets}
         print(key, len(assets), 'indexed records;', omitted, 'omitted')
     output = ROOT / '.generated/site-check'; output.mkdir(parents=True, exist_ok=True)
     (output / 'index.json').write_text(json.dumps({'version': digest.hexdigest(), 'preparedAt': prepared, 'layers': layers, 'countries': countries, 'water': water}, ensure_ascii=False, separators=(',', ':')))

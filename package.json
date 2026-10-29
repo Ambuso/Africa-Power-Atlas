@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
+    "predev": "python3 scripts/build_site_check_index.py",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

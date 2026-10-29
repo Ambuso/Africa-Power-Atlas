@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import './mapkwetu.css';
+import './home.css';
+import './intelligence.css';
 import './transition.css';
 import './site-check.css';
 

@@ -14,6 +14,7 @@ export function SiteHeader() {
     <header className="kw-header">
       <Brand />
       <nav aria-label="Main navigation">
+        <Link href="/intelligence">Atlas Intelligence</Link>
         <Link href="/site-check">Site Check</Link>
         <Link href="/atlas">Atlas</Link>
         <Link href="/datasets">Datasets</Link>

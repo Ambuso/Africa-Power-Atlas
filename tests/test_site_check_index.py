@@ -1,5 +1,8 @@
 import importlib.util
 import math
+import json
+import tempfile
+from unittest.mock import patch
 import unittest
 from pathlib import Path
 spec = importlib.util.spec_from_file_location('site_index', Path(__file__).resolve().parents[1] / 'scripts/build_site_check_index.py')
@@ -7,6 +10,24 @@ module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
 class IndexTests(unittest.TestCase):
+    def test_missing_optional_snapshots_build_with_explicit_coverage_gaps(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            base = root / 'public/data'
+            for relative in ['admin/africa_admin0.geojson', 'plants/africa_power_plants.geojson']:
+                target = base / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(json.dumps({'type': 'FeatureCollection', 'features': []}))
+            with patch.object(module, 'ROOT', root):
+                module.main()
+            index = json.loads((root / '.generated/site-check/index.json').read_text())
+            self.assertEqual(index['water'], [])
+            for key in ['substations', 'transmission', 'dataCentres', 'landingStations', 'fibreRoutes']:
+                self.assertEqual(index['layers'][key]['source']['release'], 'Source snapshot unavailable')
+                self.assertEqual(index['layers'][key]['source']['count'], 0)
+                self.assertIn('coverage gap', index['layers'][key]['source']['note'])
+            self.assertEqual(json.loads((base / 'site-check/places.json').read_text()), [])
+
     def test_route_cap_covers_segment_interiors(self):
         geometry = {'type': 'LineString', 'coordinates': [[-10, 65], [10, 65], [20, 20]]}
         cap = module.cap(geometry)
